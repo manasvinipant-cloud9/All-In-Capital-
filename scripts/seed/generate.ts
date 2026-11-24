@@ -45,7 +45,7 @@ const loop2 = Array.from({ length: 60 }, (_, i) => {
   let final = draft;
   if (i === 58) final = `Dear Ms ${fn}, ${"We are pleased to receive your application and would like to introduce our fund in detail. ".repeat(8)}Kind regards`;
   else if (i === 59) final = Array(136).fill("boilerplate").join(" ");
-  else if (i % 100 < 58 || i < 35) final = `Hi ${fn},\n${n} is unusual for a pre-seed team in this sector. How did you get there with so little spend?\nWould ${slotsTxt[0]} or ${slotsTxt[1]} work for a 30-minute call?\nRiya\nAll In Capital`;
+  else if (rnd() < 0.58) final = `Hi ${fn},\n${n} is unusual for a pre-seed team in this sector. How did you get there with so little spend?\nWould ${slotsTxt[0]} or ${slotsTxt[1]} work for a 30-minute call?\nRiya\nAll In Capital`;
   return { row_id: `L2-${i + 1}`, date_sent: `2026-0${1 + Math.floor(i / 12)}-${String(5 + (i % 20)).padStart(2, "0")}`, founder_name: fn, startup: `SynthCo ${i + 1}`, founder_type: pick(ftypes), sector: pick(sectors), stage: "Pre-seed", city: pick(cities),
     founder_background: "Synthetic background", traction_facts: n, system_draft: draft, riya_final_email: final, synthetic: true, riya_words: words(final) };
 });
