@@ -1,0 +1,220 @@
+[
+  {
+    "name": "MeetRecord",
+    "one_liner": "Records and summarises sales calls for teams",
+    "sector": "B2B SaaS",
+    "status": "active",
+    "tags": [
+      "sales",
+      "ai"
+    ],
+    "domain": "meetrecord.example",
+    "source_url": "https://meetrecord.example",
+    "source_note": "Fictional seed company"
+  },
+  {
+    "name": "ShopStack",
+    "one_liner": "Checkout and inventory tools for small retailers",
+    "sector": "Commerce infrastructure",
+    "status": "active",
+    "tags": [
+      "retail"
+    ],
+    "domain": "shopstack.example",
+    "source_url": "https://shopstack.example",
+    "source_note": "Fictional seed company"
+  },
+  {
+    "name": "PaySutra",
+    "one_liner": "UPI collections for micro-merchants",
+    "sector": "Fintech",
+    "status": "active",
+    "tags": [
+      "payments"
+    ],
+    "domain": "paysutra.example",
+    "source_url": "https://paysutra.example",
+    "source_note": "Fictional seed company"
+  },
+  {
+    "name": "KisanKart",
+    "one_liner": "Farm-input marketplace",
+    "sector": "Commerce infrastructure",
+    "status": "active",
+    "tags": [
+      "agri"
+    ],
+    "domain": "kisankart.example",
+    "source_url": "https://kisankart.example",
+    "source_note": "Fictional seed company"
+  },
+  {
+    "name": "Anaaj Foods",
+    "one_liner": "Packaged staples brand",
+    "sector": "Consumer brand",
+    "status": "active",
+    "tags": [
+      "food"
+    ],
+    "domain": "anaajfoods.example",
+    "source_url": "https://anaajfoods.example",
+    "source_note": "Fictional seed company"
+  },
+  {
+    "name": "GlowLab",
+    "one_liner": "Dermatologist-led skincare",
+    "sector": "Consumer brand",
+    "status": "active",
+    "tags": [
+      "beauty"
+    ],
+    "domain": "glowlab.example",
+    "source_url": "https://glowlab.example",
+    "source_note": "Fictional seed company"
+  },
+  {
+    "name": "SkyScan",
+    "one_liner": "Satellite crop analytics",
+    "sector": "Deeptech",
+    "status": "active",
+    "tags": [
+      "agri",
+      "space"
+    ],
+    "domain": "skyscan.example",
+    "source_url": "https://skyscan.example",
+    "source_note": "Fictional seed company"
+  },
+  {
+    "name": "CircuitNest",
+    "one_liner": "Low-cost IoT sensors",
+    "sector": "Deeptech",
+    "status": "active",
+    "tags": [
+      "hardware"
+    ],
+    "domain": "circuitnest.example",
+    "source_url": "https://circuitnest.example",
+    "source_note": "Fictional seed company"
+  },
+  {
+    "name": "FinNudge",
+    "one_liner": "Savings nudges for gig workers",
+    "sector": "Fintech",
+    "status": "active",
+    "tags": [
+      "savings"
+    ],
+    "domain": "finnudge.example",
+    "source_url": "https://finnudge.example",
+    "source_note": "Fictional seed company"
+  },
+  {
+    "name": "BharatBill",
+    "one_liner": "Utility bill payments for small towns",
+    "sector": "Fintech",
+    "status": "exited",
+    "tags": [
+      "payments"
+    ],
+    "domain": "bharatbill.example",
+    "source_url": "https://bharatbill.example",
+    "source_note": "Fictional seed company"
+  },
+  {
+    "name": "TutorTrail",
+    "one_liner": "Vernacular test prep app",
+    "sector": "Consumer tech",
+    "status": "active",
+    "tags": [
+      "edtech"
+    ],
+    "domain": "tutortrail.example",
+    "source_url": "https://tutortrail.example",
+    "source_note": "Fictional seed company"
+  },
+  {
+    "name": "Chaiwala Co",
+    "one_liner": "Premium chai subscriptions",
+    "sector": "Consumer brand",
+    "status": "active",
+    "tags": [
+      "beverage"
+    ],
+    "domain": "chaiwala.example",
+    "source_url": "https://chaiwala.example",
+    "source_note": "Fictional seed company"
+  },
+  {
+    "name": "LoopLedger",
+    "one_liner": "Bookkeeping for CA firms",
+    "sector": "B2B SaaS",
+    "status": "active",
+    "tags": [
+      "accounting"
+    ],
+    "domain": "loopledger.example",
+    "source_url": "https://loopledger.example",
+    "source_note": "Fictional seed company"
+  },
+  {
+    "name": "MotoMend",
+    "one_liner": "On-demand two-wheeler repair",
+    "sector": "Consumer tech",
+    "status": "shut_down",
+    "tags": [
+      "mobility"
+    ],
+    "domain": "motomend.example",
+    "source_url": "https://motomend.example",
+    "source_note": "Fictional seed company"
+  },
+  {
+    "name": "VoltRoute",
+    "one_liner": "Battery swapping for delivery riders",
+    "sector": "Deeptech",
+    "status": "active",
+    "tags": [
+      "ev"
+    ],
+    "domain": "voltroute.example",
+    "source_url": "https://voltroute.example",
+    "source_note": "Fictional seed company"
+  },
+  {
+    "name": "StitchKart",
+    "one_liner": "B2B garment sourcing",
+    "sector": "Commerce infrastructure",
+    "status": "active",
+    "tags": [
+      "apparel"
+    ],
+    "domain": "stitchkart.example",
+    "source_url": "https://stitchkart.example",
+    "source_note": "Fictional seed company"
+  },
+  {
+    "name": "MoneyMitra",
+    "one_liner": "Micro-loans via an NBFC partner",
+    "sector": "Fintech",
+    "status": "shut_down",
+    "tags": [
+      "credit"
+    ],
+    "domain": "moneymitra.example",
+    "source_url": "https://moneymitra.example",
+    "source_note": "Fictional seed company"
+  },
+  {
+    "name": "PetPal",
+    "one_liner": "Pet food and care brand",
+    "sector": "Consumer brand",
+    "status": "active",
+    "tags": [
+      "pets"
+    ],
+    "domain": "petpal.example",
+    "source_url": "https://petpal.example",
+    "source_note": "Fictional seed company"
+  }
+]
