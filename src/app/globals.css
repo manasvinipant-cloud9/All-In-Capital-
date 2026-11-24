@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #F6F7F4; --card: #FFFFFF; --ink: #14171C; --muted: #4A515C; --subtle: #636A76; --line: #E3E6E1;
+  --cobalt: #2747F5; --cobalt-hover: #1C36D0; --on-cobalt: #FFFFFF;
+  --green: #1E7A46; --green-tint: #E6F4EC; --amber: #9A5B00; --amber-tint: #FBF0DC; --red: #B42318; --red-tint: #FBE9E7;
+  --dark-panel: #14171C; --on-dark: #ECEEF1;
+  --shadow: 0 8px 24px rgba(20,23,28,.12);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#0E1013; --card:#16191E; --ink:#ECEEF1; --muted:#B4BAC4; --subtle:#98A0AD; --line:#262B33; --cobalt:#7F95FF; --cobalt-hover:#9FB0FF; --on-cobalt:#0E1013;
+  --green:#5BD08A; --green-tint:#12261B; --amber:#F0B45A; --amber-tint:#2A2012; --red:#FF8A80; --red-tint:#2B1513; --dark-panel:#1D2128; --on-dark:#ECEEF1; --shadow:0 8px 24px rgba(0,0,0,.5); } }
+:root[data-theme="dark"] { --bg:#0E1013; --card:#16191E; --ink:#ECEEF1; --muted:#B4BAC4; --subtle:#98A0AD; --line:#262B33; --cobalt:#7F95FF; --cobalt-hover:#9FB0FF; --on-cobalt:#0E1013;
+  --green:#5BD08A; --green-tint:#12261B; --amber:#F0B45A; --amber-tint:#2A2012; --red:#FF8A80; --red-tint:#2B1513; --dark-panel:#1D2128; --on-dark:#ECEEF1; --shadow:0 8px 24px rgba(0,0,0,.5); }
+
+@theme inline {
+  --color-bg: var(--bg); --color-card: var(--card); --color-ink: var(--ink); --color-muted: var(--muted); --color-subtle: var(--subtle); --color-line: var(--line);
+  --color-cobalt: var(--cobalt); --color-green: var(--green); --color-amber: var(--amber); --color-red: var(--red);
+  --font-head: var(--font-schibsted), ui-sans-serif, system-ui; --font-body: var(--font-geist), ui-sans-serif, system-ui; --font-mono: var(--font-jbmono), ui-monospace, monospace;
+}
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); }
+h1,h2,h3 { font-family: var(--font-head); font-weight: 600; letter-spacing: -0.02em; }
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
+a, button, summary { transition: background-color .15s, color .15s, transform .15s; }
+:focus-visible { outline: 2px solid var(--cobalt); outline-offset: 2px; }
+.btn { min-height: 44px; min-width: 44px; padding: 0 16px; border-radius: 10px; font-weight: 600; cursor: pointer; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
