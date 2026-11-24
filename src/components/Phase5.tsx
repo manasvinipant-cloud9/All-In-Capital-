@@ -10,7 +10,7 @@ export function RunAgain() {
 }
 
 export function Logo({ domain, name }: { domain: string; name: string }) {
-  const [bad, setBad] = useState(false), ref = useRef<HTMLImageElement>(null);
+  const [bad, setBad] = useState(!domain), ref = useRef<HTMLImageElement>(null);
   useEffect(() => { const i = ref.current; if (i && i.complete && i.naturalWidth === 0) setBad(true); }, []);
   const initials = name.split(/\s+/).map(w => w[0]).join("").slice(0, 2).toUpperCase();
   return bad ? <span aria-hidden className="grid h-10 w-10 place-items-center rounded-lg bg-bg text-sm font-semibold text-muted">{initials}</span>

@@ -1,0 +1,72 @@
+[
+  {
+    "slug": "capilot",
+    "company": "CAPilot",
+    "sector": "Fintech",
+    "stage": "Pre-seed",
+    "city": "Ahmedabad"
+  },
+  {
+    "slug": "carecorner",
+    "company": "CareCorner",
+    "sector": "Healthcare",
+    "stage": "Pre-seed",
+    "city": "Hyderabad"
+  },
+  {
+    "slug": "earnwise",
+    "company": "EarnWise",
+    "sector": "Fintech",
+    "stage": "Pre-seed",
+    "city": "Gurugram"
+  },
+  {
+    "slug": "grainkind",
+    "company": "GrainKind",
+    "sector": "Consumer brand",
+    "stage": "Pre-seed",
+    "city": "Bengaluru"
+  },
+  {
+    "slug": "pumpwise",
+    "company": "Pumpwise",
+    "sector": "Deeptech",
+    "stage": "Pre-seed",
+    "city": "Pune"
+  },
+  {
+    "slug": "rentroute",
+    "company": "RentRoute",
+    "sector": "Fintech",
+    "stage": "Pre-seed",
+    "city": "Bengaluru"
+  },
+  {
+    "slug": "settlr",
+    "company": "Settlr",
+    "sector": "Fintech",
+    "stage": "Series A",
+    "city": "Mumbai"
+  },
+  {
+    "slug": "stocksathi",
+    "company": "StockSathi",
+    "sector": "Consumer tech",
+    "stage": "Pre-seed",
+    "city": "Hyderabad"
+  },
+  {
+    "slug": "talkbook",
+    "company": "Talkbook",
+    "sector": "Consumer tech",
+    "stage": "Pre-seed",
+    "city": "Chennai"
+  },
+  {
+    "slug": "yatrika",
+    "company": "Yatrika",
+    "sector": "Consumer tech",
+    "stage": "Pre-seed",
+    "city": "Jaipur"
+  }
+]

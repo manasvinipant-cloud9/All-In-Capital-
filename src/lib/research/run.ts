@@ -19,8 +19,9 @@ export function backgroundClaims(form: Record<string, string>, deck: Page[], fou
   const out: string[] = [], bg = form["Founder background"];
   if (bg) out.push(...bg.split(/[.;]\s*|,\s+(?=[A-Z])/).map(s => s.trim()).filter(s => s.length >= 6));
   const text = deck.map(p => p.text).join(" ");
-  for (const f of founders) { const m = text.match(new RegExp(`${f.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")},? (?:CEO|CTO|COO|CFO|Co-?founder)[,.]?\\s*([^.]+)`)); if (m) out.push(m[1].trim()); }
-  for (const s of text.split(/(?<=\.)\s+/)) if (/\b(ex-|formerly|previously|MBA|IIT|IIM|PhD|alumn)/i.test(s)) out.push(...s.trim().replace(/\.$/, "").split(/,\s*(?=(?:Ex-|MBA|IIT|IIM|PhD|formerly|previously))/i));   // "Ex-A, Ex-B, MBA C" becomes three statements
+  for (const f of founders) { const m = text.match(new RegExp(`${f.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}[^.]{0,40}?(?:CEO|CTO|COO|CFO|Co-?founder)[,.]?\\s*([^.]+)`)); if (m && !/^(?:Ex-|MBA)/.test(m[1].trim())) out.push(m[1].trim()); }
+  // Credential phrases, wherever they sit in a sentence: "Founder and CEO Ex-Goldman Sachs. Ex-Google. MBA, IIM Ahmedabad."
+  for (const s of text.split(/(?<=\.)\s+/)) for (const m of s.matchAll(/Ex-[A-Z][\w&]*(?: [A-Z][\w&]*)*|MBA[^.]*|IIT[^.]*|IIM[^.]*|PhD[^.]*|\b(?:formerly|previously|alumn\w*)\b[^.]*/g)) out.push(m[0].trim().replace(/\.$/, ""));
   return [...new Set(out)].filter(s => s.length >= 6).slice(0, 10);
 }
 export function profileLinks(form: Record<string, string>, founders: string[], company: string) {

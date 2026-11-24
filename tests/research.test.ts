@@ -27,21 +27,21 @@ const NAMES = { primary: "p", fallback: "f" };
 
 // A small fake web. EarnWise's deck says "Ex-Goldman Sachs, Ex-Google, MBA IIM Ahmedabad"; its form says internship, vendor contract, tier-2 school.
 const PAGES: Record<string, string> = {
-  "https://earnwise.example/about": "EarnWise is an earned wage access product for factory workers in India. Nikhil Verma, co-founder of EarnWise, spent ten weeks as a summer intern at Goldman Sachs in 2019. He later worked as a vendor contractor at Google for five months. EarnWise raised a small pre-seed round last year.",
-  "https://www.livemint.com/companies/earnwise-fintech-wages": "Fintech startup EarnWise lets factory workers draw wages early. Founder Nikhil Verma previously interned at Goldman Sachs before starting the company in Gurugram, according to people familiar with his career.",
-  "https://www.crunchbase.com/organization/earnwise": "EarnWise is a fintech company founded by Nikhil Verma. The company offers earned wage access. Nikhil Verma studied business and worked at Google.",
-  "https://blog.example/nikhil-verma-chef": "Nikhil Verma is a chef in Pune known for his biryani. Nikhil Verma opened his third restaurant this spring and teaches cooking classes on weekends for local students and families.",
+  "https://earnwise.example/about": "EarnWise is an earned wage access product for factory workers in India. Rohit Arora, co-founder of EarnWise, spent ten weeks as a summer intern at Goldman Sachs in 2019. He later worked as a vendor contractor at Google for five months. EarnWise raised a small pre-seed round last year.",
+  "https://www.livemint.com/companies/earnwise-fintech-wages": "Fintech startup EarnWise lets factory workers draw wages early. Founder Rohit Arora previously interned at Goldman Sachs before starting the company in Gurugram, according to people familiar with his career.",
+  "https://www.crunchbase.com/organization/earnwise": "EarnWise is a fintech company founded by Rohit Arora. The company offers earned wage access. Rohit Arora studied business and worked at Google.",
+  "https://blog.example/rohit-arora-chef": "Rohit Arora is a chef in Pune known for his biryani. Rohit Arora opened his third restaurant this spring and teaches cooking classes on weekends for local students and families.",
 };
 const SEARCH_HITS: Record<string, string[]> = {
   company: ["https://earnwise.example/about", "https://www.crunchbase.com/organization/earnwise", "https://www.livemint.com/companies/earnwise-fintech-wages"],
-  founder: ["https://www.linkedin.com/in/nikhil-verma-123", "https://blog.example/nikhil-verma-chef", "https://www.livemint.com/companies/earnwise-fintech-wages"],
+  founder: ["https://www.linkedin.com/in/rohit-arora-123", "https://blog.example/rohit-arora-chef", "https://www.livemint.com/companies/earnwise-fintech-wages"],
 };
 function fakeSearch(log: string[], o: { failOn?: RegExp; emptyOn?: RegExp } = {}): SearchPort {
   return { async search(query) {
     log.push(query);
     if (o.failOn?.test(query)) throw new Error("search 429");
     if (o.emptyOn?.test(query)) return [];
-    const urls = /lawsuit|fraud/.test(query) ? [] : /"Nikhil Verma"/.test(query) ? SEARCH_HITS.founder : SEARCH_HITS.company;
+    const urls = /lawsuit|fraud/.test(query) ? [] : /"Rohit Arora"/.test(query) ? SEARCH_HITS.founder : SEARCH_HITS.company;
     return urls.map(url => ({ url, title: "", snippet: "" }));
   } };
 }
@@ -60,16 +60,16 @@ function fakeModel(seen: { system: string; user: string }[]): Transport {
 const earnwise = async () => { const f = await loadFiles("earnwise"); return { slug: "earnwise", company: "EarnWise", sector: "Fintech", form: f.form, deck: f.deck }; };
 
 test("plan: queries use only names and fixed words; capped; founders capped at 3", () => {
-  const q = buildQueries({ company: "EarnWise", founders: ["Nikhil Verma", "A One", "B Two", "C Three"], sector: "Fintech" });
+  const q = buildQueries({ company: "EarnWise", founders: ["Rohit Arora", "A One", "B Two", "C Three"], sector: "Fintech" });
   assert.ok(q.length <= 12 && q.length >= 4); assert.ok(q.some(x => x.purpose === "company") && q.some(x => x.purpose === "founder") && q.some(x => x.purpose === "conflict"));
   assert.ok(!q.some(x => x.query.includes("C Three")), "only 3 founders are searched");
   assert.ok(q.every(x => !/\d/.test(x.query)), "no numbers: nothing from a deck");
 });
 test("plan guard: deck wording, emails, links, phone numbers and odd names are refused", () => {
-  const o = { company: "EarnWise", founders: ["Nikhil Verma"], sector: "Fintech" };
-  for (const bad of ['"EarnWise" earned wage access factory workers', '"Nikhil Verma" nikhil@earnwise.example', '"EarnWise" https://x.example', '"Nikhil Verma" linkedin', '"EarnWise" 9876543210']) assert.throws(() => assertSafeQuery(bad, o), /guard/, bad);
-  assert.doesNotThrow(() => assertSafeQuery('"Nikhil Verma" "EarnWise"', o));
-  for (const name of ["Nikhil <script>", "a@b.com", "", "x".repeat(70)]) assert.throws(() => buildQueries({ company: "EarnWise", founders: [name], sector: "Fintech" }), /not safe/, name);
+  const o = { company: "EarnWise", founders: ["Rohit Arora"], sector: "Fintech" };
+  for (const bad of ['"EarnWise" earned wage access factory workers', '"Rohit Arora" nikhil@earnwise.example', '"EarnWise" https://x.example', '"Rohit Arora" linkedin', '"EarnWise" 9876543210']) assert.throws(() => assertSafeQuery(bad, o), /guard/, bad);
+  assert.doesNotThrow(() => assertSafeQuery('"Rohit Arora" "EarnWise"', o));
+  for (const name of ["Rohit <script>", "a@b.com", "", "x".repeat(70)]) assert.throws(() => buildQueries({ company: "EarnWise", founders: [name], sector: "Fintech" }), /not safe/, name);
 });
 test("web: unsafe addresses and login-only sites are refused before any request", async () => {
   for (const [u, re] of [["file:///etc/passwd", /http/], ["ftp://x.example/a", /http/], ["http://user:pw@x.example/", /password/], ["http://x.example:8080/", /port/], ["http://localhost/a", /local/], ["http://127.0.0.1/a", /private/], ["http://10.0.0.5/a", /private/], ["http://169.254.169.254/latest", /private/],
@@ -80,8 +80,8 @@ test("web: unsafe addresses and login-only sites are refused before any request"
   assert.match(JSON.stringify(await webFetch("http://127.0.0.1/x")), /private/); assert.match(JSON.stringify(await webFetch("http://127.0.0.1:9/x")), /not read/); assert.match(JSON.stringify(await webFetch("https://www.linkedin.com/in/x")), /login-only/);
 });
 test("web: page text keeps content and drops scripts, menus and tags", () => {
-  const t = htmlToText("<html><nav>Menu Home</nav><script>alert('x')</script><h1>EarnWise</h1><p>Nikhil &amp; team &quot;raised&quot; funds.</p><footer>Copyright</footer></html>");
-  assert.match(t, /EarnWise/); assert.match(t, /Nikhil & team "raised" funds\./); assert.doesNotMatch(t, /alert|Menu Home|Copyright|<p>/);
+  const t = htmlToText("<html><nav>Menu Home</nav><script>alert('x')</script><h1>EarnWise</h1><p>Rohit &amp; team &quot;raised&quot; funds.</p><footer>Copyright</footer></html>");
+  assert.match(t, /EarnWise/); assert.match(t, /Rohit & team "raised" funds\./); assert.doesNotMatch(t, /alert|Menu Home|Copyright|<p>/);
 });
 test("sources: official and company pages beat press, press beats others, aggregators last; one page once, two per site", () => {
   assert.equal(tierOf("https://mca.gov.in/x", "EarnWise"), "primary"); assert.equal(tierOf("https://earnwise.example/about", "EarnWise"), "primary"); assert.equal(tierOf("https://www.livemint.com/a", "EarnWise"), "press");
@@ -91,23 +91,23 @@ test("sources: official and company pages beat press, press beats others, aggreg
   assert.equal(r.filter(x => x.url.includes("livemint")).length, 2); assert.equal(rankHits(hits, "EarnWise", 2).length, 2);
 });
 test("relevance: a same-name person without the company or field is set aside in code", () => {
-  const o = { company: "EarnWise", sector: "Fintech", purpose: "founder" as const, subject: "Nikhil Verma" };
+  const o = { company: "EarnWise", sector: "Fintech", purpose: "founder" as const, subject: "Rohit Arora" };
   assert.equal(relevance(PAGES["https://earnwise.example/about"], o), null); assert.equal(relevance(PAGES["https://www.livemint.com/companies/earnwise-fintech-wages"], o), null);
-  assert.match(relevance(PAGES["https://blog.example/nikhil-verma-chef"], o)!, /different person/); assert.match(relevance("A page about someone else entirely.", o)!, /does not mention this founder/);
+  assert.match(relevance(PAGES["https://blog.example/rohit-arora-chef"], o)!, /different person/); assert.match(relevance("A page about someone else entirely.", o)!, /does not mention this founder/);
   assert.match(relevance("A page about a different firm.", { ...o, purpose: "company", subject: "EarnWise" })!, /does not mention the company/);
   const long = "x ".repeat(5000) + "EarnWise is here " + "y ".repeat(5000); assert.ok(excerpt(long, ["EarnWise"]).includes("EarnWise is here")); assert.ok(excerpt(long, ["EarnWise"]).length <= 6000);
 });
 
 test("page reading: names never reach the model, quotes must be on the page, other-person facts are dropped, set-aside pages cost no call", async () => {
-  clearCache(); const seen: { system: string; user: string }[] = [], ctx = { transport: fakeModel(seen), ...NAMES, founders: ["Nikhil Verma"], application: "earnwise" };
-  const o = { company: "EarnWise", sector: "Fintech", founders: ["Nikhil Verma"], applicationClaims: ["Ex-Goldman Sachs"], ctx };
-  const ok = await extractFacts({ url: "https://earnwise.example/about", text: PAGES["https://earnwise.example/about"], tier: "primary", purpose: "founder", subject: "Nikhil Verma" }, o);
-  assert.equal(ok.facts.length, 2); assert.doesNotMatch(seen[0].user + seen[0].system, /Nikhil|Verma/); assert.match(seen[0].user, /\[F1\]/); assert.equal(ok.facts[0].matches, "conflict");
-  const before = seen.length, aside = await extractFacts({ url: "https://blog.example/nikhil-verma-chef", text: PAGES["https://blog.example/nikhil-verma-chef"], tier: "other", purpose: "founder", subject: "Nikhil Verma" }, o);
+  clearCache(); const seen: { system: string; user: string }[] = [], ctx = { transport: fakeModel(seen), ...NAMES, founders: ["Rohit Arora"], application: "earnwise" };
+  const o = { company: "EarnWise", sector: "Fintech", founders: ["Rohit Arora"], applicationClaims: ["Ex-Goldman Sachs"], ctx };
+  const ok = await extractFacts({ url: "https://earnwise.example/about", text: PAGES["https://earnwise.example/about"], tier: "primary", purpose: "founder", subject: "Rohit Arora" }, o);
+  assert.equal(ok.facts.length, 2); assert.doesNotMatch(seen[0].user + seen[0].system, /Rohit|Arora/); assert.match(seen[0].user, /\[F1\]/); assert.equal(ok.facts[0].matches, "conflict");
+  const before = seen.length, aside = await extractFacts({ url: "https://blog.example/rohit-arora-chef", text: PAGES["https://blog.example/rohit-arora-chef"], tier: "other", purpose: "founder", subject: "Rohit Arora" }, o);
   assert.match(aside.setAside!, /different person/); assert.equal(seen.length, before, "the model was never called for it");
   clearCache(); let n = 0; const sys: string[] = [];
   const t: Transport = async (_m, r) => { sys.push(r.system); n++; const quote = n === 1 ? "Goldman Sachs made this up" : "ten weeks as a summer intern at Goldman Sachs"; return { text: JSON.stringify([{ subject: "[F1]", type: "career", claim: "intern", quote, same_person: "yes", matches_application: "conflict" }, { subject: "[F1]", type: "career", claim: "other person", quote: "ten weeks as a summer intern", same_person: "no", matches_application: "match" }]) }; };
-  const r = await extractFacts({ url: "https://earnwise.example/about", text: PAGES["https://earnwise.example/about"], tier: "primary", purpose: "founder", subject: "Nikhil Verma" }, { ...o, ctx: { ...ctx, transport: t } });
+  const r = await extractFacts({ url: "https://earnwise.example/about", text: PAGES["https://earnwise.example/about"], tier: "primary", purpose: "founder", subject: "Rohit Arora" }, { ...o, ctx: { ...ctx, transport: t } });
   assert.match(sys[1], /rejected: quote not found verbatim/); assert.equal(r.facts.length, 1); assert.ok(r.dropped.some(d => /different person/.test(d)));
 });
 
@@ -134,12 +134,13 @@ test("research run: logs every query (empty and failed too), never fetches Linke
   assert.ok(r.pages.some(p => p.status === "set_aside" && /different person/.test(p.note!))); assert.ok(r.pages.some(p => p.status === "used" && p.tier === "primary"));
   assert.deepEqual(r.facts.map(f => f.id).slice(0, 2), ["r1", "r2"]); assert.ok(r.conflicts.length > 0 && r.conflicts.every(c => /intern|vendor/.test(c.claim)));
   const by = (re: RegExp) => r.verifications.find(v => re.test(v.claim))!;
-  assert.equal(by(/10-week internship/).label, "verified", "what the FORM says about the internship is confirmed by the company page");
+  // The real form hides the employers ("an investment bank", "a large technology company"), so its own statements cannot be matched to a web page that names Goldman Sachs or Google.
+  assert.notEqual(by(/Summer analyst internship/).label, "verified", "an anonymised form statement is never marked verified from a page that names the employer");
   assert.equal(by(/^Ex-Goldman/).label, "claimed", "the deck's 'Ex-Goldman Sachs' is NOT verified: the page says intern"); assert.match(by(/^Ex-Goldman/).note, /something different/);
   assert.equal(by(/^Ex-Google/).label, "claimed", "'Ex-Google' is not verified when the page says vendor contractor"); assert.ok(r.verifications.some(v => /IIM/.test(v.claim)));
-  assert.ok(r.profileLinks.some(l => /Search LinkedIn for Nikhil Verma/.test(l.label))); assert.deepEqual(loadResearch("earnwise"), JSON.parse(JSON.stringify(r)));
-  for (const x of seen) assert.doesNotMatch(x.system + x.user, /Nikhil|Verma|@|\+91 9/, "no names, emails or phones reach the model");
-  for (const q of searched) assert.doesNotThrow(() => assertSafeQuery(q, { company: "EarnWise", founders: ["Nikhil Verma"], sector: "Fintech" })); assert.ok(searched.every(q => !/earned wage|factory|IIM|Goldman/i.test(q)), "no deck content in any search");
+  assert.ok(r.profileLinks.some(l => /Search LinkedIn for Rohit Arora/.test(l.label))); assert.deepEqual(loadResearch("earnwise"), JSON.parse(JSON.stringify(r)));
+  for (const x of seen) assert.doesNotMatch(x.system + x.user, /Rohit|Arora|@|\+91 9/, "no names, emails or phones reach the model");
+  for (const q of searched) assert.doesNotThrow(() => assertSafeQuery(q, { company: "EarnWise", founders: ["Rohit Arora"], sector: "Fintech" })); assert.ok(searched.every(q => !/earned wage|factory|IIM|Goldman/i.test(q)), "no deck content in any search");
 }));
 test("research run: no search key, no model or an unsafe name means 'not checked', and every background stays claimed", async () => inTmp(async () => {
   const a = await earnwise(), claims = backgroundClaims(a.form, a.deck, foundersOf(a.form, a.deck)); assert.ok(claims.length >= 3);

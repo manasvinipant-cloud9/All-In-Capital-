@@ -1,10 +1,10 @@
-import { readFileSync } from "node:fs";
 import { reconcile } from "./pipeline/reconcile.ts";
-import { g1, g2Offline, g3, g4 } from "./pipeline/gates.ts";
+import { describe, g1, g2Offline, g3, g4 } from "./pipeline/gates.ts";
 import { scoreApplication } from "./pipeline/score.ts";
 import { realTransport, modelNames } from "./gateway/transport.ts";
 import { loadConfig } from "./config.ts";
 import { loadFiles, validSlug } from "./apps.ts";
+import { getPortfolio } from "./seedData.ts";
 import { researchApplication } from "./research/run.ts";
 import { searchPort, webFetch, type FetchPort, type SearchPort } from "./research/web.ts";
 import type { Research } from "./research/store.ts";
@@ -21,8 +21,8 @@ export function makeProcessor(deps: Deps = {}): Handler {
   return async slug => {
     if (!validSlug(slug)) throw new Error("bad application id");
     const { meta, deck, form } = await loadFiles(slug);
-    const checks = reconcile(form, deck), portfolio = JSON.parse(readFileSync("seed/portfolio.json", "utf8"));
-    const gates = [g1(form, loadConfig().fund), g2Offline(deck), g3(deck[0].text, portfolio), g4(checks)];
+    const checks = reconcile(form, deck), portfolio = getPortfolio();
+    const gates = [g1(form, loadConfig().fund), g2Offline(deck), g3(describe(form, deck), portfolio), g4(checks)];
     const steps: Record<string, string> = { ingest: "done", reconcile: `done (${checks.length} checks)`, gates: `done (${gates.filter(g => g.tripped).length} tripped)`, rank: "done" };
     const transport = "transport" in deps ? deps.transport : realTransport(), names = "names" in deps ? deps.names : modelNames();
     if (!transport || !names) {

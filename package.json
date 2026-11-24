@@ -11,8 +11,9 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test \"tests/**/*.test.ts\"",
-    "seed:gen": "tsx scripts/seed/generate.ts",
     "worker": "tsx scripts/worker.ts",
+    "check:real": "tsx scripts/check-real.ts",
+    "import:real": "tsx scripts/import-real.ts",
     "b6": "tsx scripts/b6/01-pick-step.ts && tsx scripts/b6/02-clean.ts && tsx scripts/b6/03-seal.ts && tsx scripts/b6/04-extend.ts && tsx scripts/b6/05-harness.ts && tsx scripts/b6/06-brief.ts",
     "loadtest": "tsx scripts/loadtest.ts",
     "cost": "tsx scripts/cost-report.ts"

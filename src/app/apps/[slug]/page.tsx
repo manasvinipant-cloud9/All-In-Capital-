@@ -3,7 +3,7 @@ import Link from "next/link";
 import { allApps, CRITERIA } from "../../../lib/data";
 import { ratingWord } from "../../../lib/rating";
 import { domainOf } from "../../../lib/research/rank";
-import { Rating, GateChip, GATE_NAME, Placeholder } from "../../../components/bits";
+import { Rating, GateChip, GATE_NAME } from "../../../components/bits";
 import Composer from "../../../components/Composer";
 import { candidateSlots, fillSlots } from "../../../lib/email/slots";
 import { offlineInvite, isDeeptech } from "../../../lib/email/offline";
@@ -34,7 +34,7 @@ export default async function App({ params }: { params: Promise<{ slug: string }
     <Link href="/" className="inline-flex min-h-11 items-center text-sm text-cobalt">Back to board</Link>
     <h1 className="mt-1 text-2xl md:text-3xl">{a.company}</h1>
     <p className="text-sm text-muted">{[a.sector, a.stage, a.city, a.form["Round size"]].filter(Boolean).join(" · ")}</p>
-    <div className="mt-4">{unscored ? <p className="mb-4 rounded-lg border border-line bg-card px-3 py-2 text-sm text-muted">{a.waiting} The checks below are real. No rating yet.</p> : a.source === "placeholder" ? <Placeholder /> : <p className="mb-4 text-sm text-muted">Scored by the model on {new Date(a.scoredAt!).toLocaleDateString("en-IN")}. Gaps are named under More detail.</p>}</div>
+    <div className="mt-4">{unscored ? <p className="mb-4 rounded-lg border border-line bg-card px-3 py-2 text-sm text-muted">{a.waiting} The checks below are real. No rating yet.</p>  : <p className="mb-4 text-sm text-muted">Scored by the model on {new Date(a.scoredAt!).toLocaleDateString("en-IN")}. Gaps are named under More detail.</p>}</div>
     <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
       <div className="space-y-5">
         <section className={`rounded-xl p-5 ${band[1]}`}><p className="text-sm font-semibold uppercase tracking-wide">Give it time?</p><p className="font-[family-name:var(--font-head)] text-2xl font-semibold">{band[0]}</p>
@@ -48,7 +48,7 @@ export default async function App({ params }: { params: Promise<{ slug: string }
         {tripped.length > 0 && <section className="card p-4"><h2 className="text-base">Checks</h2><ul className="mt-2 space-y-2 text-sm">{tripped.map(g => <li key={g.gate} className="flex flex-wrap items-center gap-2"><GateChip code={g.gate} /><span>{g.reason}</span>
           {g.cite?.[0]?.page && <Source page={g.cite[0].page} quote={g.cite[0].quote} text={a.deck[g.cite[0].page - 1].text} />}</li>)}</ul></section>}
         <section className="card p-4" aria-labelledby="em"><h2 id="em" className="text-base">Email and meeting</h2>
-          <div className="mt-3 grid gap-4 md:grid-cols-2"><Composer slug={a.slug} company={a.company} founderName={a.form["Founder name"]} to={a.form["Email"]} subject={inv.subject} body={fillSlots(inv.body, offered)} offered={offered.map(o => o.toISOString())} deeptech={isDeeptech(a.sector)} sent={!!th} sector={a.sector} modelReady={!!realTransport() && !!modelNames()} />
+          <div className="mt-3 grid gap-4 md:grid-cols-2"><Composer slug={a.slug} company={a.company} founderName={a.form["Founder name"]} to={a.form["Email"] ?? ""} subject={inv.subject} body={fillSlots(inv.body, offered)} offered={offered.map(o => o.toISOString())} deeptech={isDeeptech(a.sector)} sent={!!th} sector={a.sector} modelReady={!!realTransport() && !!modelNames()} />
             <aside aria-label="Outreach" className={`h-fit rounded-lg p-3 ${st.kind === "booked" ? "bg-[var(--green-tint)] text-green" : st.kind === "needs_you" ? "bg-[var(--amber-tint)] text-amber" : "bg-bg"}`}><p className="font-semibold">{st.kind === "none" ? "Not sent yet" : st.text}</p>
               {st.kind === "none" ? <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-muted"><li>Your letter offers two free times from your calendar.</li><li>The founder picks one or suggests their own.</li><li>If you are free, the call is booked with a Meet link.</li></ol> : st.meeting ? <a className="mt-2 inline-flex min-h-11 items-center underline" href={st.meeting.meetLink}>Join Meet</a> : st.kind === "needs_you" ? <p className="mt-1 text-sm">The reply was not a clear time. Read it in Gmail and answer there.</p> : null}
               <p className="mt-2 text-xs text-subtle">The draft times above were the next free slots when this page loaded ({offered.map(fmtSlot).join(", ")}). Sending checks them again.</p></aside></div>

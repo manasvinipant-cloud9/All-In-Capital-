@@ -2,14 +2,18 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { parseCsv } from "../csv.ts";
 import { nearestExamples } from "./draft.ts";
+import { lint } from "./lint.ts";
 
 const FILE = ".local/style_examples.json";
 type Stored = { sector: string; body: string; at: string };
 const load = (): Stored[] => (existsSync(FILE) ? JSON.parse(readFileSync(FILE, "utf8")) : []);
 
 /** Names and dates are removed so an example teaches style, not a person: "Hi [F1]," and the slot placeholders. */
+const DAY = String.raw`(?:Tuesday|Thursday),?\s+\d{1,2}\s+[A-Z][a-z]+(?:,?\s+\d{1,2}(?::\d{2})?\s?(?:am|pm)(?:\s+IST)?)?`;
+/** Riya's real offer: two Tuesday or Thursday dates. They become placeholders so an example teaches the wording, not the dates. */
+const OFFER_PAIR = new RegExp(`${DAY}\\s+or\\s+${DAY}`);
 export const normalizeExample = (body: string) =>
-  body.replace(/^Hi [^,\n]+,/, "Hi [F1],").replace(/Would .+? or .+? work for a 30-minute call\?/, "Would {slot_1} or {slot_2} work for a 30-minute call?");
+  body.replace(/^Hi [^,\n]+,/, "Hi [F1],").replace(OFFER_PAIR, "{slot_1} or {slot_2}");
 
 export function addStyleExample(o: { sector: string; body: string }) {
   mkdirSync(".local", { recursive: true });
@@ -17,7 +21,7 @@ export function addStyleExample(o: { sector: string; body: string }) {
 }
 /** Three of Riya's real emails: same sector first, newest sent emails ahead of the seed set. */
 export function styleExamples(sector: string, n = 3): string[] {
-  const seed = existsSync("seed/exports/loop2_first_email.csv") ? parseCsv(readFileSync("seed/exports/loop2_first_email.csv", "utf8")).slice(0, 58) : [];
+  const seed = existsSync("seed/exports/loop2_first_email.csv") ? parseCsv(readFileSync("seed/exports/loop2_first_email.csv", "utf8")).filter(r => !lint({ template: "invite", subject: "Quick call", body: r.riya_final_email, deeptech: /deeptech|hardware/i.test(r.sector) }).length) : [];   // her two planted bad rows fail the checks and are never used as examples
   const rows = [...load().map(s => ({ sector: s.sector, riya_final_email: s.body, system_draft: "" })), ...seed.map(r => ({ sector: r.sector, riya_final_email: r.riya_final_email, system_draft: r.system_draft }))];
   return nearestExamples(rows, sector, n).map(normalizeExample);
 }

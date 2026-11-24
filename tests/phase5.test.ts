@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { MEMOS } from "../scripts/seed/content.ts";
+import { getMemos, memoPeople } from "../src/lib/seedData.ts";
 import { blindInput, runCalibration, reportMarkdown, offlineScorer } from "../src/lib/calibration.ts";
 import { lensFor, lensWeights, REVEALED, WRITTEN } from "../src/lib/pipeline/lens.ts";
 import { DEFAULT, loadConfig, saveConfig, validate } from "../src/lib/config.ts";
@@ -11,18 +11,18 @@ import { recommend, lane } from "../src/lib/pipeline/rank.ts";
 
 const inTmp = async (f: () => void | Promise<void>) => { const old = process.cwd(); process.chdir(mkdtempSync(`${tmpdir()}/aic-`)); try { await f(); } finally { process.chdir(old); } };
 
-test("calibration is blind: no outcome, no 'why we', no company name reaches the scorer", () => {
-  for (const m of MEMOS) {
+test("calibration is blind: no outcome, no 'why we', no company or founder name reaches the scorer", () => {
+  for (const m of getMemos()) {
     const b = blindInput(m);
-    assert.equal(b.includes(m.why), false, m.company); assert.equal(b.includes(m.company), false, m.company);
-    assert.doesNotMatch(b, /Why we|invested|passed/i);
+    assert.equal(b.includes(m.why), false, m.company); assert.equal(b.includes(m.company.replace(/^The /, "").replace(/ Company$/, "")), false, m.company);
+    for (const p of memoPeople(m).filter(x => x.length > 3)) assert.equal(b.includes(p), false, `${m.company}: ${p}`);
+    assert.doesNotMatch(b, /Why we|INVESTED|PASSED|Decision/);
   }
 });
-test("calibration report: counts, matrix, ranking, one-line cases of at most 20 words with no tags", () => {
-  const r = runCalibration(); assert.equal(r.n, 12); assert.equal(r.matrix.investedYes + r.matrix.investedNo, 5); assert.equal(r.matrix.passedYes + r.matrix.passedNo, 7); assert.equal(r.ranking.pairs, 35);
-  for (const x of r.rows.filter(x => !x.agrees)) for (const s of [x.yes!, x.no!]) { assert.ok(s.split(/\s+/).length <= 20); assert.doesNotMatch(s, /\[[^\]]*\]|d\d+ deck/); }
-  const md = reportMarkdown(r); assert.match(md, /In-sample/); assert.match(md, /Agreement:\*\* \d+ of 12/); assert.match(md, /offline|stand-in/i);
-  assert.equal(offlineScorer.offline, true);
+test("calibration report: 12 real memos, counts, matrix, ranking, one-line cases of at most 20 words with no tags", () => {
+  const r = runCalibration(); assert.equal(r.n, 12); assert.equal(r.matrix.investedYes + r.matrix.investedNo, 6); assert.equal(r.matrix.passedYes + r.matrix.passedNo, 6); assert.equal(r.ranking.pairs, 36);
+  for (const x of r.rows.filter(x => !x.agrees)) for (const s of [x.yes!, x.no!]) { assert.ok(s.split(/\s+/).length <= 20, s); assert.doesNotMatch(s, /\[[^\]]*\]|d\d+ deck/); }
+  const md = reportMarkdown(r); assert.match(md, /In-sample/); assert.match(md, /Agreement:\*\* \d+ of 12/); assert.match(md, /offline|stand-in/i); assert.equal(offlineScorer.offline, true);
 });
 test("calibration is deterministic (Run again gives the same result)", () => assert.deepEqual(runCalibration(), runCalibration()));
 

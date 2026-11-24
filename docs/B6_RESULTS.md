@@ -1,16 +1,16 @@
 # B6 harness results (sealed test set, 20 rows)
 
-Seal verified: `964eb1a89cf1a16ef608c77a629b34240f00dcf8883a525a7a9e640efb0012da`.
+Seal verified: `419910da8db12181314a55875eda5a0d4bc3664b79c6a00d7a8785ea44742065`.
 
-**Read this first:** every row here comes from a fictional export that I generated, because the real Loop 2 export was not readable. These numbers test the harness. They say nothing about how Riya actually writes, and a high score here would not be evidence of anything.
+**Read this first:** the rows are the fund's real Loop 2 export (58 clean rows after dropping the two planted bad ones). With 20 test rows, every figure is rough: one email is 5 percentage points. Arms that need a model were not run.
 
 | Arm | Passes all checks | Identical to Riya's email | Mean word overlap with Riya's | Emails with a number not in the facts |
 |---|---|---|---|---|
-| A: old system drafts | 9 of 20 | 9 | 0.53 | 0 |
-| T: fixed template (no model) | 20 of 20 | 0 | 0.71 | 0 |
-| R: Riya's own emails (sanity) | 20 of 20 | 20 | 1 | 0 |
+| A: old system drafts | 12 of 20 | 12 | 0.73 | 1 |
+| T: fixed template (no model) | 20 of 20 | 0 | 0.36 | 0 |
+| R: Riya's own emails (sanity) | 20 of 20 | 20 | 1 | 1 |
 
-"Identical to Riya's email" for arm A is the measured sent-as-is baseline on these rows (9 of 20). The master brief's 42% is the figure for the real data, which I could not see.
+"Identical to Riya's email" for arm A is the measured sent-as-is baseline on these rows (12 of 20). Across all 60 rows it is 25 (42%).
 
 ## Not run
 - B: current prompt: not run: no model key

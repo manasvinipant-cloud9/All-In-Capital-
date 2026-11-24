@@ -1,16 +1,14 @@
 // Blind backtest on the 12 memos. The scorer sees only What it does, Founder assessment and Risks, with the name redacted.
 // It never sees the outcome, the stage label or "Why we...". In-sample: the memos shaped the rubric.
-import { MEMOS } from "../../scripts/seed/content.ts";
+import { getMemos, redactMemo, type Memo } from "./seedData.ts";
 import { total } from "./pipeline/validate.ts";
 import { ratingWord } from "./rating.ts";
 import { CRITERIA } from "./data-constants.ts";
 
-export type Memo = (typeof MEMOS)[number];
 export type Scorer = { name: string; offline: boolean; score(blind: string): Record<string, number> };
 
 export function blindInput(m: Memo): string {
-  const t = `What it does:\n${m.what}\n\nFounder assessment:\n${m.founder}\n\nRisks and open questions:\n${m.risks}`;
-  return t.replaceAll(m.company, "[Company]");
+  return redactMemo(m, `What it does:\n${m.what}\n\nFounder assessment:\n${m.founder}\n\nRisks and open questions:\n${m.risks}`);
 }
 // Rule-based stand-in used until a model key exists. Clearly labelled; it is NOT the model.
 const CUES: [RegExp, Record<string, number>][] = [
@@ -29,7 +27,7 @@ export const offlineScorer: Scorer = { name: "Offline rule-based stand-in (not a
 const words = (s: string, n = 20) => s.replace(/\[[^\]]*\]/g, "").split(/\s+/).filter(Boolean).slice(0, n).join(" ");
 const first = (s: string) => s.split(/(?<=[.!?])\s/)[0];
 export type Row = { company: string; fund: "invested" | "passed"; predicted: "invest" | "pass"; score: number; word: string; agrees: boolean; yes?: string; no?: string; sources?: string[] };
-export function runCalibration(scorer: Scorer = offlineScorer, threshold = 6, memos: Memo[] = MEMOS) {
+export function runCalibration(scorer: Scorer = offlineScorer, threshold = 6, memos: Memo[] = getMemos()) {
   const rows: Row[] = memos.map(m => {
     const sc = scorer.score(blindInput(m)), t = total(sc), predicted = t >= threshold ? "invest" : "pass";
     const agrees = (predicted === "invest") === (m.outcome === "invested");

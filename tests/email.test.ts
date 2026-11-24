@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { lint } from "../src/lib/email/lint.ts";
+import { parseCsv } from "../src/lib/csv.ts";
 import { candidateSlots, fillSlots, recheckForSend } from "../src/lib/email/slots.ts";
 import { fmtSlot, fromIST } from "../src/lib/ist.ts";
 
@@ -24,24 +25,27 @@ test("linter rules fire", () => {
   assert.ok(lint({ template: "pass", subject: "Your application", body: "Hi A,\n3 numbers looked inflated.\nRiya" }).some(i => i.rule === "accuse"));
   assert.ok(lint({ template: "followup", subject: "Checking in", body: "Hi A,\n1 note? Another? \nRiya" }).some(i => i.rule === "questions"));
 });
-test("every real Riya email in the seed export passes; the system drafts do not", () => {
-  const rows = readFileSync("seed/exports/loop2_first_email.csv", "utf8").split("\n").slice(1);
-  let passed = 0, draftsFail = 0;
-  for (const line of rows.slice(0, 58)) {
-    const m = line.match(/^"([^"]*)",.*"(Hi [^"]*)","(Hi [^"]*Riya[^"]*)"|^/); void m;
+test("every clean email Riya really sent passes the checker, her two planted bad rows fail, and most rewritten system drafts fail", () => {
+  const rows = parseCsv(readFileSync("seed/exports/loop2_first_email.csv", "utf8")), BAD = new Set(["L2-030", "L2-054"]);
+  assert.equal(rows.length, 60);
+  let rewrittenFail = 0, rewritten = 0;
+  for (const r of rows) {
+    const deeptech = /deeptech|hardware/i.test(r.sector), issues = lint({ template: "invite", subject: "Quick call", body: r.riya_final_email, deeptech });
+    if (BAD.has(r.row_id)) assert.ok(issues.length > 0, `${r.row_id} is a planted bad email and must fail`);
+    else assert.deepEqual(issues, [], `a check Riya fails is a wrong check: ${r.row_id}`);
+    if (r.riya_final_email.trim() !== r.system_draft.trim()) { rewritten++; if (lint({ template: "invite", subject: "Quick call", body: r.system_draft, deeptech }).length) rewrittenFail++; }
   }
-  // parse CSV properly
-  const parse = (s: string) => { const out: string[][] = []; let row: string[] = [], cur = "", q = false; for (let i = 0; i < s.length; i++) { const c = s[i]; if (q) { if (c === '"' && s[i + 1] === '"') { cur += '"'; i++; } else if (c === '"') q = false; else cur += c; } else if (c === '"') q = true; else if (c === ",") { row.push(cur); cur = ""; } else if (c === "\n") { row.push(cur); out.push(row); row = []; cur = ""; } else cur += c; } row.push(cur); out.push(row); return out; };
-  const t = parse(readFileSync("seed/exports/loop2_first_email.csv", "utf8")), h = t[0], idx = (k: string) => h.indexOf(k);
-  for (const r of t.slice(1, 59)) {
-    const fin = r[idx("riya_final_email")], draft = r[idx("system_draft")];
-    // Every email Riya sent, rewritten or sent as it was, must pass: a check she fails is a wrong check.
-    assert.deepEqual(lint({ template: "invite", subject: "Quick call", body: fin }), [], r[0]); passed++;
-    if (fin !== draft) draftsFail += lint({ template: "invite", subject: "Quick call", body: draft }).length > 0 ? 1 : 0;
-  }
-  assert.equal(passed, 58); assert.ok(draftsFail > 20, "rewritten system drafts should fail the checks");
-  const dirty = t.slice(59, 61).map(r => lint({ template: "invite", subject: "Hi", body: r[idx("riya_final_email")] }).length);
-  assert.ok(dirty.every(n => n > 0), "dirty rows must fail");
+  assert.equal(rewritten, 35); assert.ok(rewrittenFail >= 30, `only ${rewrittenFail} of ${rewritten} rewritten drafts fail`);
+});
+test("linter: Riya's real offer format passes; other weekdays, missing afternoon and number words are handled", () => {
+  const base = (offer: string) => `Hi Asha,\n\nStores reordering every nine days is rare for a first-year wholesale app.\n\nWhat share of those reorders come through the app?\n\n${offer}\n\nRiya\nAll In Capital`;
+  const r = (offer: string) => lint({ template: "invite", subject: "Quick call", body: base(offer) }).map(i => i.rule);
+  assert.deepEqual(r("Could we do 30 minutes on Tuesday 20 May or Thursday 22 May, in the afternoon?"), []);
+  assert.deepEqual(r("Do you have 30 minutes on Thursday, 26 Nov, 2:00 pm IST or Tuesday, 1 Dec, 3:30 pm IST?"), []);
+  assert.ok(r("Could we do 30 minutes on Monday 19 May or Thursday 22 May, in the afternoon?").includes("slot-day"));
+  assert.ok(r("Could we do 30 minutes on Tuesday 20 May or Thursday 22 May?").includes("afternoon"));
+  assert.ok(r("Could we do 30 minutes on Tuesday 20 May at 10:00 am or Thursday 22 May at 11:00 am?").includes("afternoon"));
+  assert.ok(r("Could we do 30 minutes sometime next week?").includes("slots"));
 });
 
 test("slots: Tue/Thu afternoons IST, 30 minutes, >=24h ahead", () => {

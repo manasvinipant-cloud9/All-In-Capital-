@@ -18,6 +18,7 @@ const PRIVATE = new Set(["Email", "Phone", "LinkedIn"]);
 /** Founder names for redaction: the form's name plus anyone the deck lists with a founder title. */
 export function foundersOf(form: Record<string, string>, deck: Page[]): string[] {
   const names = new Set<string>(); if (form["Founder name"]) names.add(form["Founder name"].trim());
+  for (const n of (form["Founder names"] ?? "").split(";").map(x => x.trim()).filter(Boolean)) names.add(n);
   for (const m of deck.map(p => p.text).join(" ").matchAll(/([A-Z][a-z]+(?: [A-Z][a-z]+)+),? (?:CEO|CTO|COO|CFO|Co-?founder)/g)) names.add(m[1]);
   return [...names];
 }

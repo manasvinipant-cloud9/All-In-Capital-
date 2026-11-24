@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
+import { getPortfolio } from "../../lib/seedData";
 import { Logo, EditOneLiner } from "../../components/Phase5";
 export const dynamic = "force-dynamic";
 type P = { name: string; one_liner: string; sector: string; status: string; tags: string[]; domain: string; source_url: string; source_note: string };
@@ -6,7 +7,7 @@ const nice = (t: string) => t.replace(/[_-]+/g, " ").replace(/^./, c => c.toUppe
 const STATUS: Record<string, string> = { active: "Active", exited: "Exited", shut_down: "Shut down" };
 export default function Portfolio() {
   const edits = existsSync(".local/portfolio-edits.json") ? JSON.parse(readFileSync(".local/portfolio-edits.json", "utf8")) : {};
-  const rows = (JSON.parse(readFileSync("seed/portfolio.json", "utf8")) as P[]).map(p => ({ ...p, ...(edits[p.name] ?? {}) }));
+  const rows = (getPortfolio() as P[]).map(p => ({ ...p, ...(edits[p.name] ?? {}) }));
   const exited = rows.filter(r => r.status === "exited").length, shut = rows.filter(r => r.status === "shut_down").length, needs = rows.filter(r => r.one_liner.trim().length < 15).length;
   return (<><h1 className="text-2xl">Portfolio</h1>
     <p className="mt-1 text-sm text-muted">{rows.length} companies · {exited} exited · {shut} shut down · {needs} need a description</p>

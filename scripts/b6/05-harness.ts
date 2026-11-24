@@ -16,14 +16,16 @@ const test = JSON.parse(body) as Row[];
 console.log(`Seal OK (${now.slice(0, 12)}...), ${test.length} rows.`);
 
 // 2) Arms. A is measured. T is a fixed template with no model. B, C, E need a model; D (fine-tune) only if the stop rule does not fire.
-const SLOTS = ["Tuesday 2 Dec 3pm IST", "Thursday 4 Dec 4pm IST"];
-const template = (r: Row) => `Hi [F1],\n${r.traction_facts} is unusual for a pre-seed ${r.sector.toLowerCase()} team. How did you get there with so little spend?\nWould ${SLOTS[0]} or ${SLOTS[1]} work for a 30-minute call? If neither suits you, reply with a time that does.\nRiya\nAll In Capital`;
+const template = (r: Row) => {
+  const fact = (r.traction_facts.split(";").map(x => x.trim()).find(x => /\d/.test(x)) ?? r.traction_facts.split(";")[0]).replace(/[.]$/, "");
+  return `Hi [F1],\n\n${fact} is unusual for a ${r.sector.toLowerCase()} startup at this stage.\n\nHow much of that came from your first few customers?\n\nCould we do 30 minutes on Tuesday 2 December or Thursday 4 December, in the afternoon?\n\nRiya\nAll In Capital`;
+};
 const arms: Record<string, (r: Row) => string> = { "A: old system drafts": r => r.system_draft, "T: fixed template (no model)": template, "R: Riya's own emails (sanity)": r => r.final };
 
 const tok = (s: string) => new Set(s.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter(Boolean));
 const jaccard = (a: string, b: string) => { const x = tok(a), y = tok(b); return [...x].filter(t => y.has(t)).length / new Set([...x, ...y]).size; };
 const nums = (s: string) => (s.match(/\d[\d,.]*/g) ?? []).map(n => n.replace(/[,.]+$/, ""));
-const slotless = (s: string) => s.replace(/\[F\d+\]/g, "").replace(/Would .+? work for a 30-minute call\?/, "");
+const slotless = (s: string) => s.replace(/\[F\d+\]/g, "").split("\n").filter(l => !/Tuesday|Thursday/.test(l)).join("\n");
 
 const results = Object.entries(arms).map(([name, gen]) => {
   const outs = test.map(r => ({ r, e: gen(r) }));
@@ -40,13 +42,13 @@ const md = `# B6 harness results (sealed test set, ${test.length} rows)
 
 Seal verified: \`${now}\`.
 
-**Read this first:** every row here comes from a fictional export that I generated, because the real Loop 2 export was not readable. These numbers test the harness. They say nothing about how Riya actually writes, and a high score here would not be evidence of anything.
+**Read this first:** the rows are the fund's real Loop 2 export (58 clean rows after dropping the two planted bad ones). With 20 test rows, every figure is rough: one email is 5 percentage points. Arms that need a model were not run.
 
 | Arm | Passes all checks | Identical to Riya's email | Mean word overlap with Riya's | Emails with a number not in the facts |
 |---|---|---|---|---|
 ${results.map(r => `| ${r.arm} | ${r.lintClean} of ${r.n} | ${r.exactAsRiya} | ${r.meanWordOverlapWithRiya} | ${r.emailsWithNumberNotInSource} |`).join("\n")}
 
-"Identical to Riya's email" for arm A is the measured sent-as-is baseline on these rows (${results[0].exactAsRiya} of ${results[0].n}). The master brief's 42% is the figure for the real data, which I could not see.
+"Identical to Riya's email" for arm A is the measured sent-as-is baseline on these rows (${results[0].exactAsRiya} of ${results[0].n}). Across all 60 rows it is 25 (42%).
 
 ## Not run
 ${notRun.map(n => `- ${n.arm}: ${n.status}`).join("\n")}

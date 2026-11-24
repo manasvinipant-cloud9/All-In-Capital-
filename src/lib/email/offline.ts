@@ -1,14 +1,15 @@
 // Offline draft (no model): builds an invite from a number in the application so Riya can edit. Placeholders are filled by the caller.
 export const firstName = (full: string) => full.replace(/^(dr|mr|ms|mrs)\.?\s+/i, "").split(/\s+/)[0];
-const FIELDS: [string, string, string][] = [
-  ["Repeat rate", "{v}", "Which channel brought the customers who came back?"],
-  ["Paying customers", "{v}", "How many of those were still paying after three months?"],
-  ["Pilots", "{v}", "Which of those would pay without the pilot discount?"],
-  ["Revenue", "Revenue of {v}", "How much of that came from your first ten customers?"],
+const FIELDS: [string, string][] = [
+  ["Repeat behaviour", "Which channel brought the customers who came back?"], ["Repeat", "Which families came back, and how soon?"], ["Customers", "How many of those would pay again without a discount?"],
+  ["Active customers", "How many of those come back each week?"], ["Rent volume", "How much of that is repeat payers?"], ["Revenue", "How much of that came from your first ten customers?"], ["Users", "How many of those are paying?"], ["Advances", "How many workers took a second advance?"],
 ];
+/** The first clause of a form answer, kept short: "24 paying CA firms, 7 on free trial. 2 firms churned." becomes "24 paying CA firms". */
+const clause = (v: string) => v.split(/[.,;(]/)[0].trim().split(/\s+/).slice(0, 12).join(" ");
 export function pickFact(form: Record<string, string>) {
-  const f = FIELDS.find(([k]) => /\d/.test(form[k] ?? "")) ?? FIELDS[3];
-  return { fact: f[1].replace("{v}", form[f[0]] ?? "your traction"), question: f[2] };
+  const hit = FIELDS.find(([k]) => /\d/.test(clause(form[k] ?? ""))) ?? FIELDS[5];
+  const v = clause(form[hit[0]] ?? "");
+  return { fact: /\d/.test(v) ? v : "your traction", question: hit[1] };
 }
 export function offlineInvite(form: Record<string, string>, stage: string, sector: string, deeptech: boolean) {
   const { fact, question } = pickFact(form);

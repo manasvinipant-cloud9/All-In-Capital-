@@ -4,7 +4,7 @@ import { extractText, getDocumentProxy } from "unpdf";
 import { BASE, listMeta, pathsFor, validSlug, type Meta } from "../apps.ts";
 import { pdfPages } from "../pipeline/ingest.ts";
 import { enqueue } from "../queue.ts";
-import { normalizeForm, parseFormJson, parseFormText } from "./form.ts";
+import { isTableForm, normalizeForm, parseFormJson, parseFormTable, parseFormText } from "./form.ts";
 import { checkPdf, MAX_FORM_TEXT, MAX_PAGES } from "./limits.ts";
 
 export type Saved = { ok: true; slug: string; company: string; duplicate: boolean; warnings: string[] } | { ok: false; message: string };
@@ -13,13 +13,13 @@ const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").repla
 async function readFormFile(bytes: Uint8Array): Promise<Record<string, string> | string> {
   if (bytes.length > MAX_FORM_TEXT * 16) return "The form file is too big.";
   if (!checkPdf(bytes, "form")) {
-    try { const { text } = await extractText(await getDocumentProxy(bytes.slice()), { mergePages: true }); return parseFormText(String(text)); }
+    try { const { text } = await extractText(await getDocumentProxy(bytes.slice()), { mergePages: false }); const t = (text as string[]).join("\n"); return isTableForm(t) ? parseFormTable(t) : parseFormText(t); }
     catch { return "The form PDF could not be read. Type the details in the box below instead."; }
   }
   if (bytes.length > MAX_FORM_TEXT) return "The form file is too big.";
   const text = new TextDecoder("utf-8").decode(bytes);
   if (text.trimStart().startsWith("{")) { try { return parseFormJson(JSON.parse(text)); } catch { return "The form file is not valid JSON."; } }
-  return parseFormText(text);
+  return isTableForm(text) ? parseFormTable(text) : parseFormText(text);
 }
 
 /**

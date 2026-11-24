@@ -22,7 +22,7 @@ export function maskName(text: string, name: string): string {
 }
 
 const PRAISE = /\b(impressive|exciting|excited|love|great|amazing|fantastic|incredible|fascinating)\b/i;
-const SLOT = /\b(?:Mon|Tues|Wednes|Thurs|Fri)day[^.?\n]*?\d{1,2}(?::\d{2})?\s?(?:am|pm)/gi;
+const SLOT = /\b(?:Tuesday|Thursday),?\s+\d{1,2}\s+[A-Z][a-z]{2,8}/g;
 /** Deterministic labels for what Riya changed between the system draft and her final email. */
 export function changeTags(draft: string, final: string): string[] {
   const t: string[] = [];

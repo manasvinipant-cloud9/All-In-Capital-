@@ -1,3 +1,3 @@
-Sealed test set fingerprint (SHA-256): 964eb1a89cf1a16ef608c77a629b34240f00dcf8883a525a7a9e640efb0012da
-Rows: 20; by founder type: domain-expert 10, first-time 6, repeat 4
+Sealed test set fingerprint (SHA-256): 419910da8db12181314a55875eda5a0d4bc3664b79c6a00d7a8785ea44742065
+Rows: 20; by founder type: hardware 1, services 3, software 16
 Sealed before any prompt, harness or training work.

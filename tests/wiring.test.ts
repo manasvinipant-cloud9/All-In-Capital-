@@ -97,9 +97,9 @@ test("scoring: past corrections reach the scorer with the company name removed, 
   assert.match(ev, /PAST CORRECTIONS/); assert.match(ev, /\[Company\]/); assert.doesNotMatch(ev, /AlphaCo/); assert.equal(s.corrections, 1);
   assert.deepEqual(JSON.parse(readFileSync(".local/decisions.json", "utf8"))[0].reusedIn, ["earnwise"]);
 }));
-test("memo retrieval: at most two, names removed", () => {
-  const m = topMemos("Credentials only drone company with no customers and no path to revenue surveillance", 2);
-  assert.ok(m.length > 0 && m.length <= 2); assert.ok(m.every(x => !/SkyEye|AeroSense/.test(x)));
+test("memo retrieval: at most two, with company and founder names removed", () => {
+  const m = topMemos("Autonomous drone delivery of medical supplies. No signed customer, regulators have not permitted beyond visual line of sight operation, liability and insurance unaddressed, aerospace founder.", 2);
+  assert.ok(m.length > 0 && m.length <= 2); assert.ok(m.every(x => !/AeroDrop|Meera Kapoor|Kapoor/.test(x))); assert.match(m[0], /\[Company\]|\[Founder\]/);
 });
 
 test("queue handler: blocked without a model key, scores with one, rejects bad ids", async () => inTmp(async () => {
@@ -110,22 +110,25 @@ test("queue handler: blocked without a model key, scores with one, rejects bad i
   assert.equal(ok.blocked, undefined); assert.match(ok.steps.extract_claims, /done \(\d+ claims\)/); assert.ok(loadScored("capilot"));
   await assert.rejects(makeProcessor({ transport: null, names: null })("../etc/passwd"), /bad application id/);
 }));
-test("screens: a saved model run replaces the placeholder, and low confidence blocks 'Take the call'", async () => inTmp(async () => {
-  const before = (await allApps()).find(a => a.slug === "greenloop")!; assert.equal(before.source, "placeholder");
-  const base = { slug: "greenloop", scores: { C1: 9, C2: 9, C3: 9, C4: 9, C5: 9, C6: 9 }, rationale: { C1: "Reasoned." }, gaps: {}, claims: [], rubricVersion: 1, promptVersion: 1, model: "p", scoredAt: new Date().toISOString(), corrections: 0, memos: 0 };
+test("screens: nothing is scored until a model run is saved; a saved run replaces the waiting state; low confidence blocks 'Take the call'", async () => inTmp(async () => {
+  const before = (await allApps()).find(a => a.slug === "carecorner")!; assert.equal(before.source, "unscored"); assert.equal(before.lane, "unscored"); assert.deepEqual(before.scores, {});
+  assert.ok((await allApps()).every(a => a.source === "unscored"), "no application has an invented rating");
+  const base = { slug: "carecorner", scores: { C1: 9, C2: 9, C3: 9, C4: 9, C5: 9, C6: 9 }, rationale: { C1: "Reasoned." }, gaps: {}, claims: [], rubricVersion: 1, promptVersion: 1, model: "p", scoredAt: new Date().toISOString(), corrections: 0, memos: 0 };
   saveScored({ ...base, confidence: { C1: "high", C2: "high", C3: "high", C4: "high", C5: "high", C6: "high" } });
-  const hi = (await allApps()).find(a => a.slug === "greenloop")!; assert.equal(hi.source, "model"); assert.equal(hi.total, 9); assert.equal(hi.rec, "Take the call"); assert.equal(hi.rationale.C1, "Reasoned.");
+  const hi = (await allApps()).find(a => a.slug === "carecorner")!; assert.equal(hi.source, "model"); assert.equal(hi.total, 9); assert.equal(hi.rec, "Take the call"); assert.equal(hi.rationale.C1, "Reasoned.");
   saveScored({ ...base, confidence: { C1: "low", C2: "high", C3: "high", C4: "high", C5: "high", C6: "high" } });
-  assert.equal((await allApps()).find(a => a.slug === "greenloop")!.rec, "Dig first");
+  assert.equal((await allApps()).find(a => a.slug === "carecorner")!.rec, "Dig first");
+  saveScored({ ...base, slug: "grainkind", confidence: { C1: "high", C2: "high", C3: "high", C4: "high", C5: "high", C6: "high" } });
+  assert.equal((await allApps()).find(a => a.slug === "grainkind")!.rec, "Dig first", "GrainKind's x10 market size trips a gate, so a high score still goes to a person");
 }));
 
 test("draft: no personal data reaches the model, three of Riya's real emails are shown, real times are filled in, and it passes the checks", async () => inTmp(async () => {
   clearCache(); const seen: Seen = [], now = fromIST(2026, 10, 24, 10);
-  const good = "Hi Nikhil,\n38 retailers is unusual for a pre-seed team, when most peers are pre-revenue. How did you get there?\nWould {slot_1} or {slot_2} work for a 30-minute call? If neither suits you, reply with a time that does.\nRiya\nAll In Capital";
+  const good = "Hi Rohit,\n38 retailers is unusual for a pre-seed team, when most peers are pre-revenue. How did you get there?\nWould {slot_1} or {slot_2} work for a 30-minute call? If neither suits you, reply with a time that does.\nRiya\nAll In Capital";
   const transport: Transport = async (_m, r) => { seen.push(r); return { text: "```json\n" + JSON.stringify({ subject: "Quick call", body: good }) + "\n```" }; };
   const d = await draftForApp("earnwise", { transport, names: NAMES, now });
   assert.equal(d.passed, true); assert.match(d.body, /Thursday, 26 Nov, 2:00 pm IST/); assert.doesNotMatch(d.body, /\{slot/);
-  assert.doesNotMatch(seen[0].system + seen[0].user, /Nikhil|Verma|@|\+91 9/);
+  assert.doesNotMatch(seen[0].system + seen[0].user, /Rohit|Arora|@|\+91 9/);
   assert.equal((seen[0].system.match(/---/g) ?? []).length, 2, "three examples"); assert.match(seen[0].system, /Hi \[F1\],/); assert.match(seen[0].system, /\{slot_1\}/);
   assert.deepEqual(lint({ template: "invite", subject: d.subject, body: d.body }), []);
 }));
@@ -133,28 +136,28 @@ test("draft: a failing reply is regenerated with the failures named; non-JSON ne
   clearCache(); const seen: Seen = []; let n = 0;
   const bad = "Hi N,\nImpressive! Chat?\nBest regards";
   const transport: Transport = async (_m, r) => { seen.push(r); return { text: ++n === 1 ? "sorry, no JSON" : JSON.stringify({ subject: "Hi", body: bad }) }; };
-  const d = await draftForApp("greenloop", { transport, names: NAMES, note: "Make it shorter." });
+  const d = await draftForApp("grainkind", { transport, names: NAMES, note: "Make it shorter." });
   assert.equal(d.passed, false); assert.equal(d.attempts, 3); assert.match(seen[1].system, /not JSON/); assert.match(seen[2].system, /failed these checks/); assert.match(seen[0].system, /Make it shorter/);
   await assert.rejects(draftForApp("nope-app", { transport, names: NAMES }), /unknown application/);
 }));
 test("deeptech draft prompt asks for the Aditya line", async () => inTmp(async () => {
   clearCache(); const seen: Seen = [];
-  await draftForApp("dronedrishti", { transport: async (_m, r) => { seen.push(r); return { text: JSON.stringify({ subject: "Hi", body: "x" }) }; }, names: NAMES });
+  await draftForApp("pumpwise", { transport: async (_m, r) => { seen.push(r); return { text: JSON.stringify({ subject: "Hi", body: "x" }) }; }, names: NAMES });
   assert.match(seen[0].system, /Aditya/);
 }));
 test("examples loop: an edited sent email becomes an example, names and dates removed, same sector first", async () => inTmp(async () => {
-  addStyleExample({ sector: "Hardware", body: "Hi Meera,\n120 store visits is unusual for a pre-seed team. How?\nWould Tuesday 2 Dec 3pm IST or Thursday 4 Dec 4pm IST work for a 30-minute call? If neither suits you, reply with a time that does.\nRiya\nAll In Capital" });
+  addStyleExample({ sector: "Hardware", body: "Hi Ritu,\n120 store visits is unusual for a pre-seed team. How?\nWould Tuesday 2 Dec 3pm IST or Thursday 4 Dec 4pm IST work for a 30-minute call? If neither suits you, reply with a time that does.\nRiya\nAll In Capital" });
   const ex = styleExamples("Hardware"); assert.equal(ex.length, 3); assert.match(ex[0], /^Hi \[F1\],/); assert.match(ex[0], /\{slot_1\} or \{slot_2\}/); assert.doesNotMatch(ex[0], /Meera|2 Dec/);
 }));
 
 const T0 = fromIST(2026, 10, 24, 11);
-const thread = (o: Partial<Thread> = {}): Thread => ({ id: "t1", slug: "greenloop", company: "GreenLoop Snacks", founderName: "Meera Kulkarni", founderEmail: "meera@example.test", deeptech: false, state: "sent", offered: [], reoffers: 0, sentAt: T0.toISOString(), processed: [], ...o });
+const thread = (o: Partial<Thread> = {}): Thread => ({ id: "t1", slug: "grainkind", company: "GrainKind", founderName: "Ritu Hegde", founderEmail: "meera@example.test", deeptech: false, state: "sent", offered: [], reoffers: 0, sentAt: T0.toISOString(), processed: [], ...o });
 test("follow-ups: prepared once after 3 working days of silence, never sent, two fresh Tue/Thu times, passes the follow-up checks", async () => inTmp(async () => {
   const store = new Store(false); store.put(thread());
   assert.equal(prepareFollowups({ store, now: fromIST(2026, 10, 26, 12) }).length, 0, "only 2 working days");
   const made = prepareFollowups({ store, now: fromIST(2026, 10, 27, 12) }); assert.equal(made.length, 1);
   const f = made[0]; assert.equal(f.status, "ready"); assert.equal(f.to, "meera@example.test"); assert.equal(f.offered.length, 2);
-  assert.deepEqual(lint({ template: "followup", subject: f.subject, body: f.body }), []); assert.doesNotMatch(f.body, /\{slot/); assert.match(f.body, /Hi Meera,/);
+  assert.deepEqual(lint({ template: "followup", subject: f.subject, body: f.body }), []); assert.doesNotMatch(f.body, /\{slot/); assert.match(f.body, /Hi Ritu,/);
   assert.equal(prepareFollowups({ store, now: fromIST(2026, 10, 28, 12) }).length, 0, "only one follow-up per thread"); assert.equal(loadFollowups().length, 1);
 }));
 test("follow-ups: not prepared after a reply, or when the thread is booked or needs Riya", async () => inTmp(async () => {
@@ -177,4 +180,11 @@ test("follow-up send route: refuses unknown ids and refuses to send without Gmai
     assert.equal(loadFollowups()[0].status, "ready", "nothing was sent");
   } finally { Object.assign(process.env, old); }
   assert.ok(!existsSync(".local/store.json"));
+}));
+
+test("cron: every application without a job or a score joins the queue exactly once; scored ones are skipped", async () => inTmp(async () => {
+  saveScored({ slug: "carecorner", scores: { C1: 5, C2: 5, C3: 5, C4: 5, C5: 5, C6: 5 }, confidence: { C1: "med", C2: "med", C3: "med", C4: "med", C5: "med", C6: "med" }, rationale: {}, gaps: {}, claims: [], rubricVersion: 1, promptVersion: 1, model: "p", scoredAt: new Date().toISOString(), corrections: 0, memos: 0 });
+  const handler = async () => ({ steps: {}, blocked: "No model key" });
+  const a = await runCron({ now: new Date(), store: new Store(false), handler, paused: true }); assert.equal(a.queued, 9);
+  const b = await runCron({ now: new Date(), store: new Store(false), handler, paused: true }); assert.equal(b.queued, 0);
 }));

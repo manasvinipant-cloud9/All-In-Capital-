@@ -76,3 +76,53 @@ export function normalizeForm(read: Record<string, string>, typed: Record<string
   const warnings = ["Email", "Stage", "Round size", "Valuation (post-money)"].filter(k => !f[k]).map(k => `${k} is missing, so checks that need it will say so.`);
   return { ok: true, form: f, sector, stage: f.Stage ?? "Unknown", city: f.City ?? "", warnings };
 }
+
+// ---- The fund's own form layout: section headers, then "Label value" lines, wrapped lines continue the value (no colons). ----
+const TABLE_LABELS = ["Company name", "Website", "Location", "Incorporated", "One-line description", "Sector (as selected)", "Stage (as selected)", "Team size",
+  "Founder 1", "Founder 2", "Founder 3", "Founder", "Time commitment", "Prior startup experience", "Earlier co-founder", "Equity split",
+  "What have you built?", "Active customers", "Customers", "Users", "Workers", "Advances", "Funding of advances", "Revenue / GMV", "Volume and revenue", "Rent volume", "Revenue", "Growth",
+  "Repeat behaviour", "Repeat", "Channel mix", "Unit economics", "Customer acquisition", "Patient acquisition", "Evidence of value", "Accuracy and liability", "Capex", "Dependencies",
+  "Competition", "Key risks", "How is credit funded?", "Credit book size", "Defaults to date", "Regulatory status", "Who else is doing this?", "Why will you win?",
+  "Amount raising", "Valuation expectation", "Existing investors", "Use of funds", "Other investors in conversation", "How did you hear about us?", "Anything else we should know?"]
+  .sort((a, b) => b.length - a.length);
+const SECTIONS = new Set(["Company", "Founders", "Product and traction", "Credit", "Competition and differentiation", "Fundraising"]);
+
+export const isTableForm = (text: string) => TABLE_LABELS.filter(l => new RegExp(`^${esc(l)}\\b`, "mi").test(text)).length >= 8;
+
+/** Splits "Dhruv Shah, CEO. Qualified CA..." into name, title and the rest. LinkedIn links are pulled out. */
+export function splitFounder(raw: string) {
+  let t = raw.replace(/(linkedin\.com\/in\/\S*-)\s+(\S+)/gi, "$1$2").replace(/\s+/g, " ").trim();
+  let linkedin = ""; t = t.replace(/(?:LinkedIn:\s*)?((?:https?:\/\/)?(?:[a-z]{2,3}\.)?linkedin\.com\/in\/[\w%.-]+)/i, (_, u) => { linkedin = u; return ""; }).replace(/\s+/g, " ").trim();
+  t = t.replace(/^(Founder\s*\d?\s+)/i, "");
+  const m = t.match(/^((?:Dr\.|Mr\.|Ms\.|Mrs\.)?\s*[A-Z][\w'’-]*\.?(?:\s+[A-Z][\w'’-]*\.?){0,3}?)(?:,\s*([^.]+?))?\.\s*(.*)$/) ?? t.match(/^((?:Dr\.\s*)?[A-Z][\w'’-]*(?:\s+[A-Z][\w'’-]*){0,3})(?:,\s*(.+))?$/);
+  const name = (m?.[1] ?? t.split(",")[0]).trim(), title = (m?.[2] ?? "").trim(), rest = (m?.[3] ?? "").replace(/^Background:\s*/i, "").trim();
+  return { name, title, rest, linkedin };
+}
+
+export function parseFormTable(text: string): Record<string, string> {
+  const norm = text.replace(/Other investors in\s*\n\s*conversation/gi, "Other investors in conversation");
+  const raw: [string, string][] = []; let started = false;
+  for (const line of norm.split("\n").map(l => l.trim()).filter(Boolean)) {
+    if (SECTIONS.has(line)) { started = true; continue; }
+    if (!started) continue;
+    const label = TABLE_LABELS.find(l => new RegExp(`^${esc(l)}(\\s|$)`, "i").test(line));
+    if (label) raw.push([label, line.slice(label.length).trim()]);
+    else if (raw.length) raw[raw.length - 1][1] += ` ${line}`;
+  }
+  const f: Record<string, string> = {}, get = (l: string) => raw.find(([k]) => k === l)?.[1].replace(/\s+/g, " ").trim();
+  for (const [k, v] of raw) if (!(k in f) && !/^Founder( \d)?$/.test(k)) f[k] = v.replace(/\s+/g, " ").trim();
+  const company = get("Company name"); if (company) { f.Company = company.replace(/\s*\(.*\)\s*$/, "").trim(); f["Legal name"] = company; delete f["Company name"]; }
+  if (f["Sector (as selected)"]) { f.Sector = f["Sector (as selected)"]; delete f["Sector (as selected)"]; }
+  if (f["Stage (as selected)"]) { f.Stage = f["Stage (as selected)"]; delete f["Stage (as selected)"]; }
+  if (f["Amount raising"]) { f["Round size"] = f["Amount raising"]; delete f["Amount raising"]; }
+  if (f["Valuation expectation"]) { f["Valuation (post-money)"] = f["Valuation expectation"]; delete f["Valuation expectation"]; }
+  if (f.Location) f.City = f.Location.split(",")[0].trim();
+  const founders = raw.filter(([k]) => /^Founder( \d)?$/.test(k)).map(([, v]) => splitFounder(v));
+  // StockSathi-style layout puts "LinkedIn:" and "Background:" on their own lines inside the founder block: already folded into the value above.
+  if (founders.length) {
+    f["Founder name"] = founders[0].name; f["Founder names"] = founders.map(x => x.name).join("; "); if (founders[0].linkedin) f.LinkedIn = founders[0].linkedin.startsWith("http") ? founders[0].linkedin : `https://www.${founders[0].linkedin.replace(/^www\./, "")}`;
+    f["Founder background"] = founders.map(x => `${x.name}${x.title ? ` (${x.title})` : ""}: ${x.rest}`).join(" ");
+    founders.forEach((x, i) => { f[`Founder ${i + 1}`] = `${x.name}${x.title ? `, ${x.title}` : ""}`; });
+  }
+  return f;
+}

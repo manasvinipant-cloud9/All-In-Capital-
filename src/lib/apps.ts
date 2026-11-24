@@ -1,6 +1,5 @@
 // One registry for every application: the fictional seed set and anything uploaded through intake.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { APPS } from "../../scripts/seed/apps.ts";
 import { pdfPages, parseForm, type Page } from "./pipeline/ingest.ts";
 
 export type Meta = { slug: string; company: string; sector: string; stage: string; city: string; source: "seed" | "uploaded"; addedAt?: string; addedBy?: string; deckSha?: string };
@@ -13,7 +12,8 @@ function uploaded(): Meta[] {
   return readdirSync(BASE).filter(validSlug).map(s => `${BASE}/${s}/meta.json`).filter(existsSync)
     .map(f => JSON.parse(readFileSync(f, "utf8")) as Meta).sort((a, b) => (a.addedAt ?? "").localeCompare(b.addedAt ?? ""));
 }
-export const listMeta = (): Meta[] => [...APPS.map(a => ({ slug: a.slug, company: a.company, sector: a.sector, stage: a.stage, city: a.city, source: "seed" as const })), ...uploaded()];
+const seedApps = (): Meta[] => (existsSync("seed/apps.json") ? (JSON.parse(readFileSync("seed/apps.json", "utf8")) as Omit<Meta, "source">[]).map(a => ({ ...a, source: "seed" as const })) : []);
+export const listMeta = (): Meta[] => [...seedApps(), ...uploaded()];
 export const getMeta = (slug: string) => (validSlug(slug) ? listMeta().find(m => m.slug === slug) : undefined);
 export const pathsFor = (m: Pick<Meta, "slug" | "source">) =>
   m.source === "seed" ? { deck: `seed/decks/${m.slug}.pdf`, form: `seed/forms/${m.slug}.json` } : { deck: `${BASE}/${m.slug}/deck.pdf`, form: `${BASE}/${m.slug}/form.json` };

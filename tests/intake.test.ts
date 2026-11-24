@@ -24,7 +24,7 @@ function pdf(pages: string[]): Promise<Uint8Array<ArrayBuffer>> {
 }
 const FORM = "Company: Acme Foods\nFounder name: Asha Rao\nEmail: asha@acme.example\nPhone: +91 90000 11111\nStage: Pre seed\nRound size: INR 2 Cr\nValuation: INR 12 Cr\nSector: Consumer brand\nTeam size: 4\nRevenue: INR 6 L monthly";
 const DECK = ["Acme Foods. Millet snacks for urban households. Pre-seed, raising INR 2 Cr, Pune. We sell forty thousand packs a month to two thousand stores and customers reorder every month, which is why we think repeat is real.",
-  "Market: 2 crore households x INR 3,000 a year = INR 60,000 Cr. Team of 6. Founder Asha Rao, CEO."];
+  "TAM INR 60,000 Cr 2 crore households x INR 3,000 a year. Team of 6. Founder Asha Rao, CEO."];
 const NAMES = { primary: "p", fallback: "f" };
 
 test("form reader: line layout, flattened layout and a differently worded layout all read the same fields", () => {
@@ -123,4 +123,14 @@ test("route: validates the upload, refuses a missing deck, and limits repeat upl
   const fake = new FormData(); fake.set("deck", new File(["<html>not a pdf</html>"], "deck.pdf", { type: "application/pdf" })); fake.set("company", "X"); fake.set("founderName", "Y");
   const bad = await call(fake, "5.5.5.5"); assert.equal(bad.status, 400); assert.match((await bad.json()).message, /not a PDF/);
   let last = 200; for (let i = 0; i < 11; i++) last = (await call(new FormData(), "6.6.6.6")).status; assert.equal(last, 429);
+}));
+
+test("intake with the fund's real files: Talkbook's deck and form PDFs read the same as the seeded copy, and the same traps are found", async () => inTmp(async () => {
+  const deck = new Uint8Array(readFileSync(`${ROOT}/seed/decks/talkbook.pdf`)), formFile = new Uint8Array(readFileSync(`${ROOT}/seed/forms/talkbook.pdf`));
+  const r = await saveApplication({ deck, formFile, addedBy: "riya@fund.test" }); assert.ok(r.ok); if (!r.ok) return;
+  assert.equal(r.company, "Talkbook"); assert.match(r.slug, /^talkbook-[0-9a-f]{6}$/);
+  const m = getMeta(r.slug)!; assert.equal(m.stage, "Pre-seed"); assert.equal(m.sector, "Consumer tech"); assert.equal(m.city, "Chennai");
+  const f = JSON.parse(readFileSync(`.local/applications/${r.slug}/form.json`, "utf8")); assert.equal(f["Founder names"], "Arun Kumar; Meenakshi S"); assert.equal(f["Round size"], "INR 2 Cr");
+  assert.ok(r.warnings.some(w => /Email/.test(w)), "the fund's form has no email address, and the app says so");
+  const a = (await allApps()).find(x => x.slug === r.slug)!; assert.ok(a.checks.some(c => /Monthly recurring revenue differs/.test(c.name))); assert.ok(a.checks.some(c => /Seats times price/.test(c.name))); assert.equal(a.gates[2].tripped, true);
 }));

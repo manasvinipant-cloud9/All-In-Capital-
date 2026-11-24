@@ -33,7 +33,7 @@ export default function Composer(p: P) {
   }
   if (p.sent) return <p className="text-sm text-muted">The letter has been sent. See the Outreach box.</p>;
   return (<div>
-    <label htmlFor="to" className="text-sm text-muted">To</label>
+    <label htmlFor="to" className="text-sm text-muted">To {!to && <span className="text-amber">(the form has no email address: type it)</span>}</label>
     <input id="to" value={to} onChange={e => setTo(e.target.value)} className="num mb-2 mt-1 min-h-11 w-full rounded-lg border border-line bg-card px-3 text-sm" />
     <label htmlFor="subj" className="text-sm text-muted">Subject</label>
     <input id="subj" value={subject} onChange={e => setSubject(e.target.value)} className="mb-2 mt-1 min-h-11 w-full rounded-lg border border-line bg-card px-3 text-sm" />
@@ -49,7 +49,7 @@ export default function Composer(p: P) {
       <h3 className="text-sm">Live checks</h3>
       {issues.length === 0 ? <p className="mt-1 text-green">All checks pass.</p> : <ul className="mt-1 list-disc space-y-1 pl-5 text-red">{issues.map((i, k) => <li key={k}>{i.msg}</li>)}</ul>}
     </section>
-    <button disabled={issues.length > 0} onClick={() => setReview(true)} className="btn mt-3 w-full bg-cobalt text-[var(--on-cobalt)] hover:bg-[var(--cobalt-hover)] disabled:opacity-50">Review and send</button>
+    <button disabled={issues.length > 0 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(to)} onClick={() => setReview(true)} className="btn mt-3 w-full bg-cobalt text-[var(--on-cobalt)] hover:bg-[var(--cobalt-hover)] disabled:opacity-50">Review and send</button>
     {review && <div role="dialog" aria-modal="true" aria-label="Confirm send" className="fixed inset-0 z-40 grid place-items-center bg-black/50 p-4">
       <div className="card max-w-md p-5" style={{ boxShadow: "var(--shadow)" }}>
         <h2 className="text-lg">Send to {to}?</h2>

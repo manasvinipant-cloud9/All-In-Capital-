@@ -3,6 +3,8 @@ import type { Page } from "./ingest.ts";
 import { hasRed, type Check } from "./reconcile.ts";
 
 export type Gate = { gate: "G1" | "G2" | "G3" | "G4"; tripped: boolean; reason: string; cite?: { page?: number; field?: string; quote?: string }[] };
+/** What the company says it does: the one-line description and what it has built, falling back to the deck cover. */
+export const describe = (form: Record<string, string>, deck: Page[]) => `${form["One-line description"] ?? ""} ${form["What have you built?"] ?? ""} ${(form["One-line description"] ?? "").length < 20 ? deck[0]?.text ?? "" : ""}`;
 export type PortfolioRow = { name: string; one_liner: string };
 
 /** G1: pre-seed or seed, raise <= Rs 10 Cr, post-money <= Rs 40 Cr. Unreadable amounts are flagged with the text. Deterministic. */
@@ -24,11 +26,11 @@ export function g2Offline(deck: Page[]): Gate {
 }
 
 const STOP = new Set(["and","the","for","with","that","this","from","into","your","our","are","has","who","per","app","ai"]);
-const stems = (s: string) => new Set(s.toLowerCase().replace(/[^a-z\s]/g, " ").split(/\s+/).filter(w => w.length > 2 && !STOP.has(w)).map(w => w.slice(0, 5)));
+const stems = (s: string) => new Set(s.toLowerCase().replace(/[^a-z\s]/g, " ").split(/\s+/).filter(w => w.length > 2 && !STOP.has(w)).map(w => w.replace(/s$/, "").slice(0, 5)));
 /** G3: similarity of the one-liner against every portfolio row. Stand-in for the vector match (same interface). A false alarm beats a miss. */
 export function g3(appText: string, portfolio: PortfolioRow[]): Gate & { matches: { name: string; overlap: number }[] } {
   const a = stems(appText);
-  const matches = portfolio.map(p => ({ name: p.name, overlap: [...stems(p.one_liner)].filter(x => a.has(x)).length })).filter(m => m.overlap >= 3).sort((x, y) => y.overlap - x.overlap);
+  const matches = portfolio.map(p => ({ name: p.name, overlap: [...stems(p.one_liner)].filter(x => a.has(x)).length })).filter(m => m.overlap >= 2).sort((x, y) => y.overlap - x.overlap);
   return { gate: "G3", tripped: matches.length > 0, matches, reason: matches.length ? `Possible overlap with portfolio company ${matches.map(m => m.name).join(", ")}. A false alarm beats a miss.` : "No portfolio overlap found." };
 }
 
