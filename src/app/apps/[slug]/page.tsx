@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { allApps, CRITERIA } from "../../../lib/data";
 import { ratingWord } from "../../../lib/rating";
+import { domainOf } from "../../../lib/research/rank";
 import { Rating, GateChip, GATE_NAME, Placeholder } from "../../../components/bits";
 import Composer from "../../../components/Composer";
 import { candidateSlots, fillSlots } from "../../../lib/email/slots";
@@ -25,6 +26,9 @@ export default async function App({ params }: { params: Promise<{ slug: string }
   const offered = candidateSlots({ now: new Date() });
   const inv = offlineInvite(a.form, a.stage, a.sector, isDeeptech(a.sector));
   const reds = a.checks.filter(c => c.severity === "red");
+  const names = a.research?.founders ?? [];
+  const who = (t: string) => t.replace(/\[F(\d)\]/g, (_, n) => names[+n - 1] ?? "the founder");
+  const ext = (url: string, label?: string) => /^https?:\/\//.test(url) ? <a className="text-cobalt underline" href={url} target="_blank" rel="noopener noreferrer">{label ?? domainOf(url)}</a> : null;
   const low = Object.entries(a.scores).sort((x, y) => x[1] - y[1]).slice(0, 2).map(([k]) => CRITERIA[k]);
   return (<>
     <Link href="/" className="inline-flex min-h-11 items-center text-sm text-cobalt">Back to board</Link>
@@ -54,6 +58,22 @@ export default async function App({ params }: { params: Promise<{ slug: string }
             <tbody>{Object.entries(CRITERIA).map(([k, n]) => <tr key={k} className="border-t border-line align-top"><th scope="row" className="py-2 pr-2 font-medium capitalize">{n}</th><td className="pr-2">{unscored ? <span className="text-sm text-subtle">Not scored</span> : <Rating score={a.scores[k]} />}</td><td className="hidden pr-2 text-muted md:table-cell">{a.rationale[k] ?? SENT[k]}{a.gaps[k] ? <span className="block text-amber">Gap: {a.gaps[k]}</span> : null}</td><td className="text-muted">{ASK[k]}</td></tr>)}</tbody></table>
           <h3 className="mt-4 text-base">Numbers that don&apos;t add up</h3>
           {a.checks.length === 0 ? <p className="text-sm text-muted">Nothing found.</p> : <ul className="mt-1 space-y-1 text-sm">{a.checks.map((c, i) => <li key={i}><b>{c.name}.</b> <span className="num text-muted">{c.formula}</span> {c.page && <Source page={c.page} quote={c.quote} text={a.deck[c.page - 1].text} />}</li>)}</ul>}
+          <h3 className="mt-5 text-base">Founders</h3>
+          {!a.research ? <p className="text-sm text-muted">Not researched yet. Research runs when the application is scored.</p> : !a.research.available
+            ? <p className="mt-1 rounded-lg bg-[var(--amber-tint)] p-2 text-sm text-amber">Not checked on the web. {a.research.reason}</p>
+            : <div className="mt-1 space-y-3 text-sm">
+                <p className="text-muted">Checked the public web on {new Date(a.research.searchedAt).toLocaleDateString("en-IN")}: {a.research.queries.length} searches, {a.research.pages.filter(p => p.status === "used").length} pages used.</p>
+                {a.research.conflicts.length > 0 && <div className="rounded-lg bg-[var(--red-tint)] p-3 text-red"><p className="font-semibold">The web disagrees with the application</p><ul className="mt-1 list-disc space-y-1 pl-5">{a.research.conflicts.map(f => <li key={f.id}>{who(f.claim)} <span className="text-muted">&ldquo;{who(f.quote)}&rdquo;</span> {ext(f.url)}</li>)}</ul></div>}
+                <ul className="space-y-2">{a.research.verifications.filter(v => v.label === "verified").map(v => <li key={v.claim}><span className="mr-2 rounded-full bg-[var(--green-tint)] px-2 py-0.5 text-xs font-semibold text-green">Verified</span>{who(v.claim)} <span className="text-muted">{v.note}</span> {v.sources.map(x => <span key={x.url} className="mr-2">{ext(x.url)}</span>)}</li>)}
+                  {a.research.verifications.every(v => v.label !== "verified") && <li className="text-muted">No founder statement could be verified.</li>}</ul></div>}
+          {a.research?.profileLinks && a.research.profileLinks.length > 0 && <ul className="mt-2 space-y-1 text-sm">{a.research.profileLinks.map(l => <li key={l.url}>{ext(l.url, l.label)}</li>)}</ul>}
+          <h3 className="mt-5 text-base">Unconfirmed</h3>
+          {!a.research ? <p className="text-sm text-muted">Nothing checked yet, so everything the founders say about themselves is unconfirmed.</p> : <ul className="mt-1 space-y-2 text-sm">
+            {a.research.verifications.filter(v => v.label !== "verified").map(v => <li key={v.claim}><span className={`mr-2 rounded-full px-2 py-0.5 text-xs font-semibold ${v.label === "claimed" ? "bg-[var(--amber-tint)] text-amber" : "bg-bg text-muted"}`}>{v.label === "claimed" ? "Claimed" : "Not found"}</span>{who(v.claim)} <span className="text-muted">{v.note}</span> {v.sources.map(x => <span key={x.url} className="mr-2">{ext(x.url)}</span>)}</li>)}
+            {a.research.verifications.every(v => v.label === "verified") && <li className="text-muted">Nothing unconfirmed.</li>}</ul>}
+          {a.research?.available && <details className="mt-3 text-sm"><summary className="cursor-pointer text-muted">Searches and pages ({a.research.queries.length} / {a.research.pages.length})</summary>
+            <ul className="mt-2 space-y-1">{a.research.queries.map((q, i) => <li key={i} className="text-muted"><span className="num">{q.results}</span> results{q.error ? ` (failed: ${q.error})` : q.results === 0 ? " (empty)" : ""}: {who(q.query)}</li>)}</ul>
+            <ul className="mt-2 space-y-1">{a.research.pages.map((p, i) => <li key={i} className="text-muted">{p.status === "used" ? "Used" : p.status === "no_facts" ? "Read, nothing relevant" : p.status === "set_aside" ? "Set aside" : "Not read"} · {domainOf(p.url)}{p.note ? ` · ${p.note}` : ""}</li>)}</ul></details>}
         </details>
       </div>
       <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">

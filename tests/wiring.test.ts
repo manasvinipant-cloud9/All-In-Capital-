@@ -106,7 +106,7 @@ test("queue handler: blocked without a model key, scores with one, rejects bad i
   clearCache();
   const none = await makeProcessor({ transport: null, names: null })("capilot");
   assert.match(none.blocked!, /No model key/); assert.equal(none.steps.score, "waiting for a model key"); assert.equal(loadScored("capilot"), null);
-  const ok = await makeProcessor({ transport: mock([]), names: NAMES })("capilot");
+  const ok = await makeProcessor({ transport: mock([]), names: NAMES, search: null })("capilot");
   assert.equal(ok.blocked, undefined); assert.match(ok.steps.extract_claims, /done \(\d+ claims\)/); assert.ok(loadScored("capilot"));
   await assert.rejects(makeProcessor({ transport: null, names: null })("../etc/passwd"), /bad application id/);
 }));

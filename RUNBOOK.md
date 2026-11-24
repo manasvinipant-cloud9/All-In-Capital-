@@ -61,7 +61,9 @@ Fill this in before go-live: _name and number of the person who deploys_, and _t
 ## Known gaps (as of this version)
 
 - Reading, scoring and drafting are connected but have only been tried with a pretend model. They wait for model keys. Until an application has been scored, its rating on screen is a labelled placeholder.
-- The research step (looking up founders on the web) is not built yet.
+- Research (checking founders and the company on the public web) is built but has only been tried with pretend search results and a pretend model. It needs a web search key (`BRAVE_SEARCH_API_KEY`) and a model key. Without a search key, scoring still goes ahead and the Application page says plainly: "Not checked on the web. Treat every background as NOT VERIFIED."
+- On the Application page, open **More detail**. **Founders** shows what the web confirms, anything where the web disagrees with the application (with the quote and a link), and links for you to open a LinkedIn profile yourself. **Unconfirmed** lists what could not be confirmed. "Claimed" means only the application, or only one site, says it. A background is never marked Verified if a page says something different about that same statement.
+- The app never logs in to a site and never reads LinkedIn pages. It links them for you to open. Searches contain only the company name, the founders' names and the sector.
 - Follow-ups are prepared after 3 working days of silence and appear on the Meetings page under "Follow-ups ready". They are never sent until you click.
 - Gmail and Calendar are written but have not been tried against real accounts.
 - There is no pause-sending switch.

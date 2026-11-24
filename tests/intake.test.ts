@@ -110,7 +110,7 @@ test("end to end: uploaded application shows real checks with no invented rating
   const mock: Transport = async (_m, q) => q.system.includes("Extract claims")
     ? { text: JSON.stringify(q.user.split("\n").map(l => l.match(/^\[page (\d+)\] (.*)$/)).filter(Boolean).slice(0, 2).map(m => ({ metric: "f", value: 1, quote: m![2].split(" ").slice(0, 5).join(" "), page: +m![1] }))) }
     : { text: JSON.stringify({ criterion: q.system.match(/criterion (C\d)/)![1], score: 8, confidence: "med", claim_ids: [[...q.user.matchAll(/^\[([df]\d+)\]/gm)][0][1]], rationale: "ok" }) };
-  const done = await makeProcessor({ transport: mock, names: NAMES })(r.slug); assert.equal(done.blocked, undefined);
+  const done = await makeProcessor({ transport: mock, names: NAMES, search: null })(r.slug); assert.equal(done.blocked, undefined);
   a = (await allApps()).find(x => x.slug === r.slug)!; assert.equal(a.source, "model"); assert.equal(a.total, 8); assert.notEqual(a.lane, "unscored");
 }));
 test("route: validates the upload, refuses a missing deck, and limits repeat uploads", async () => inTmp(async () => {

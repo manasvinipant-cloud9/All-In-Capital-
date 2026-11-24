@@ -7,6 +7,8 @@ import { total } from "./pipeline/validate.ts";
 import { lensFor, lensWeights, WRITTEN } from "./pipeline/lens.ts";
 import { loadConfig } from "./config.ts";
 import { loadScored } from "./scored.ts";
+import { loadResearch } from "./research/store.ts";
+import type { Research } from "./research/store.ts";
 import { recommend, lane, bucketOf, rank, type Rec } from "./pipeline/rank.ts";
 import { listMeta, loadFiles, type Meta } from "./apps.ts";
 import { jobs } from "./queue.ts";
@@ -22,7 +24,7 @@ export type AppView = {
   slug: string; company: string; sector: string; stage: string; city: string; oneLiner: string; form: Record<string, string>; deck: Page[];
   scores: Record<string, number>; total: number; totalWritten: number; rec: Rec; lane: "yes" | "your_call" | "no" | "unscored"; leans?: "yes" | "no";
   gates: Gate[]; checks: Check[]; best: string; worst: string; reminds?: { company: string; outcome: string; why: string }; createdAt: string;
-  source: "model" | "placeholder" | "unscored"; waiting?: string; uploaded: boolean; rationale: Record<string, string>; gaps: Record<string, string>; scoredAt?: string;
+  source: "model" | "placeholder" | "unscored"; waiting?: string; research: Research | null; uploaded: boolean; rationale: Record<string, string>; gaps: Record<string, string>; scoredAt?: string;
 };
 export { ratingWord } from "./rating.ts";
 /** First real sentence of the deck: skips the page header and a sentence that is only the company name. */
@@ -69,7 +71,7 @@ export async function allApps(): Promise<AppView[]> {
     const ph = PLACEHOLDER[a.slug];
     if (!saved && !ph) {   // uploaded and not scored yet: show the real checks, never a made-up rating
       out.push({ slug: a.slug, company: a.company, sector: a.sector, stage: a.stage, city: a.city, oneLiner: oneLiner(deck[0]?.text ?? "", a.company), form, deck, scores: {}, total: 0, totalWritten: 0, rec: "Pass", lane: "unscored",
-        gates, checks, best: "", worst: "", createdAt: a.addedAt ?? "9999", source: "unscored", waiting: waitingReason(a.slug), uploaded: a.source === "uploaded", rationale: {}, gaps: {} });
+        gates, checks, best: "", worst: "", createdAt: a.addedAt ?? "9999", source: "unscored", waiting: waitingReason(a.slug), uploaded: a.source === "uploaded", rationale: {}, gaps: {}, research: loadResearch(a.slug) });
       continue;
     }
     const sc = saved ? saved.scores : Object.fromEntries(Object.keys(CRITERIA).map((k, j) => [k, ph[j]]));
@@ -83,7 +85,7 @@ export async function allApps(): Promise<AppView[]> {
     out.push({ slug: a.slug, company: a.company, sector: a.sector, stage: a.stage, city: a.city, oneLiner: oneLiner(deck[0]?.text ?? "", a.company), form, deck,
       scores: sc, total: t, totalWritten: tw, rec, lane: l.lane, leans: l.leans, gates, checks, best: ent[0][0], worst: ent[ent.length - 1][0],
       reminds: memo && memo.o > 0 ? { company: memo.m.company, outcome: memo.m.outcome, why: memo.m.why } : undefined, createdAt: a.addedAt ?? `2026-11-${String(10 + i).padStart(2, "0")}`,
-      source: saved ? "model" : "placeholder", uploaded: a.source === "uploaded", rationale: saved?.rationale ?? {}, gaps: saved?.gaps ?? {}, scoredAt: saved?.scoredAt });
+      source: saved ? "model" : "placeholder", uploaded: a.source === "uploaded", rationale: saved?.rationale ?? {}, gaps: saved?.gaps ?? {}, scoredAt: saved?.scoredAt, research: loadResearch(a.slug) });
   }
   const order = rank(out.filter(o => o.source !== "unscored").map(o => ({ id: o.slug, score: o.total, bucket: bucketOf(o.gates[0].tripped, o.gates.some(g => g.tripped)), coverage: 1, createdAt: o.createdAt })));
   return [...order.map(r => out.find(o => o.slug === r.id)!), ...out.filter(o => o.source === "unscored")];

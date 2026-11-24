@@ -5,10 +5,13 @@ import { scoreApplication } from "./pipeline/score.ts";
 import { realTransport, modelNames } from "./gateway/transport.ts";
 import { loadConfig } from "./config.ts";
 import { loadFiles, validSlug } from "./apps.ts";
+import { researchApplication } from "./research/run.ts";
+import { searchPort, webFetch, type FetchPort, type SearchPort } from "./research/web.ts";
+import type { Research } from "./research/store.ts";
 import type { Transport } from "./gateway/index.ts";
 import type { Handler } from "./queue.ts";
 
-export type Deps = { transport?: Transport | null; names?: { primary: string; fallback: string } | null };
+export type Deps = { transport?: Transport | null; names?: { primary: string; fallback: string } | null; search?: SearchPort | null; fetch?: FetchPort };
 
 /**
  * Deterministic steps always run. With a model, claims are extracted and each criterion is scored and saved.
@@ -26,8 +29,14 @@ export function makeProcessor(deps: Deps = {}): Handler {
       for (const s of ["extract_claims", "research", "score"]) steps[s] = "waiting for a model key";
       return { steps, blocked: "No model key is set up yet, so reading, research and scoring are waiting." };
     }
-    const scored = await scoreApplication({ slug, company: meta.company, sector: meta.sector, form, deck, checks, gates }, { transport, ...names });
-    steps.extract_claims = `done (${scored.claims.length} claims)`; steps.score = "done"; steps.research = "not built yet";
+    // Research is helpful but never required: if it fails, scoring goes on and says the backgrounds are not verified.
+    let research: Research | null = null;
+    try {
+      research = await researchApplication({ slug, company: meta.company, sector: meta.sector, form, deck }, { search: "search" in deps ? deps.search ?? null : searchPort(), fetch: deps.fetch ?? webFetch, ctx: { transport, ...names } });
+      steps.research = research.available ? `done (${research.facts.length} facts from ${research.pages.filter(p => p.status === "used").length} pages, ${research.queries.length} queries)` : "not run: no search key, backgrounds are not verified";
+    } catch (e: any) { steps.research = `failed, scoring went on without it: ${String(e?.message ?? e).slice(0, 80)}`; }
+    const scored = await scoreApplication({ slug, company: meta.company, sector: meta.sector, form, deck, checks, gates }, { transport, ...names }, research);
+    steps.extract_claims = `done (${scored.claims.length} claims)`; steps.score = "done";
     return { steps };
   };
 }
