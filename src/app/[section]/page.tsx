@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-const S: Record<string, [string, string]> = { meetings: ["Meetings", "Phase 4"], calibration: ["Calibration", "Phase 5"], corrections: ["Corrections", "Phase 5"], portfolio: ["Portfolio", "Phase 5"], settings: ["Settings", "Phase 5"] };
+const S: Record<string, [string, string]> = { calibration: ["Calibration", "Phase 5"], corrections: ["Corrections", "Phase 5"], portfolio: ["Portfolio", "Phase 5"], settings: ["Settings", "Phase 5"] };
 export function generateStaticParams() { return Object.keys(S).map(section => ({ section })); }
 export default async function Stub({ params }: { params: Promise<{ section: string }> }) {
   const { section } = await params; const s = S[section]; if (!s) notFound();

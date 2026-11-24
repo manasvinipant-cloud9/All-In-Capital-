@@ -3,6 +3,11 @@ import Link from "next/link";
 import { allApps, CRITERIA } from "../../../lib/data";
 import { ratingWord } from "../../../lib/rating";
 import { Rating, GateChip, GATE_NAME, Placeholder } from "../../../components/bits";
+import Composer from "../../../components/Composer";
+import { candidateSlots, fillSlots } from "../../../lib/email/slots";
+import { offlineInvite, isDeeptech } from "../../../lib/email/offline";
+import { statusOf, threadFor } from "../../../lib/outreach";
+import { fmtSlot } from "../../../lib/ist";
 import { DecisionPanel, ThesisToggle, Source } from "../../../components/Client";
 export const dynamic = "force-dynamic";
 const ASK: Record<string, string> = { C1: "What did you learn in the field that others do not know?", C2: "Who carries the loss if this goes wrong?", C3: "How many customers came back, and when?", C4: "Can you show repeat and CAC by channel?", C5: "What does the next round need to look like?", C6: "What stops a well-funded copier?" };
@@ -14,6 +19,9 @@ export default async function App({ params }: { params: Promise<{ slug: string }
   if (!a) notFound();
   const tripped = a.gates.filter(g => g.tripped);
   const band = a.lane === "yes" ? ["Yes: give it 30 minutes.", "bg-[var(--green-tint)] text-green"] : a.lane === "no" ? ["No: don't spend time on it.", "bg-bg text-muted border border-line"] : ["Your call.", "bg-[var(--amber-tint)] text-amber"];
+  const th = threadFor(a.slug), st = statusOf(th);
+  const offered = candidateSlots({ now: new Date() });
+  const inv = offlineInvite(a.form, a.stage, a.sector, isDeeptech(a.sector));
   const reds = a.checks.filter(c => c.severity === "red");
   const low = Object.entries(a.scores).sort((x, y) => x[1] - y[1]).slice(0, 2).map(([k]) => CRITERIA[k]);
   return (<>
@@ -34,8 +42,11 @@ export default async function App({ params }: { params: Promise<{ slug: string }
         {tripped.length > 0 && <section className="card p-4"><h2 className="text-base">Checks</h2><ul className="mt-2 space-y-2 text-sm">{tripped.map(g => <li key={g.gate} className="flex flex-wrap items-center gap-2"><GateChip code={g.gate} /><span>{g.reason}</span>
           {g.cite?.[0]?.page && <Source page={g.cite[0].page} quote={g.cite[0].quote} text={a.deck[g.cite[0].page - 1].text} />}</li>)}</ul></section>}
         <section className="card p-4" aria-labelledby="em"><h2 id="em" className="text-base">Email and meeting</h2>
-          <div className="mt-3 grid gap-4 md:grid-cols-2"><div><p className="text-sm text-muted">The letter composer arrives in phase 4.</p></div>
-            <aside aria-label="Outreach" className="rounded-lg bg-bg p-3"><p className="font-semibold">Not sent yet</p><ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-muted"><li>Your letter offers two free times from your calendar.</li><li>The founder picks one or suggests their own.</li><li>If you are free, the call is booked with a Meet link.</li></ol></aside></div></section>
+          <div className="mt-3 grid gap-4 md:grid-cols-2"><Composer slug={a.slug} company={a.company} founderName={a.form["Founder name"]} to={a.form["Email"]} subject={inv.subject} body={fillSlots(inv.body, offered)} offered={offered.map(o => o.toISOString())} deeptech={isDeeptech(a.sector)} sent={!!th} />
+            <aside aria-label="Outreach" className={`h-fit rounded-lg p-3 ${st.kind === "booked" ? "bg-[var(--green-tint)] text-green" : st.kind === "needs_you" ? "bg-[var(--amber-tint)] text-amber" : "bg-bg"}`}><p className="font-semibold">{st.kind === "none" ? "Not sent yet" : st.text}</p>
+              {st.kind === "none" ? <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-muted"><li>Your letter offers two free times from your calendar.</li><li>The founder picks one or suggests their own.</li><li>If you are free, the call is booked with a Meet link.</li></ol> : st.meeting ? <a className="mt-2 inline-flex min-h-11 items-center underline" href={st.meeting.meetLink}>Join Meet</a> : st.kind === "needs_you" ? <p className="mt-1 text-sm">The reply was not a clear time. Read it in Gmail and answer there.</p> : null}
+              <p className="mt-2 text-xs text-subtle">The draft times above were the next free slots when this page loaded ({offered.map(fmtSlot).join(", ")}). Sending checks them again.</p></aside></div>
+          </section>
         <details className="card p-4"><summary className="cursor-pointer text-base font-semibold">More detail</summary>
           <table className="mt-3 w-full text-left text-sm"><caption className="sr-only">Areas</caption><thead><tr className="text-subtle"><th scope="col" className="py-1">Area</th><th scope="col">Rating</th><th scope="col" className="hidden md:table-cell">Why</th><th scope="col">Ask</th></tr></thead>
             <tbody>{Object.entries(CRITERIA).map(([k, n]) => <tr key={k} className="border-t border-line align-top"><th scope="row" className="py-2 pr-2 font-medium capitalize">{n}</th><td className="pr-2"><Rating score={a.scores[k]} /></td><td className="hidden pr-2 text-muted md:table-cell">{SENT[k]}</td><td className="text-muted">{ASK[k]}</td></tr>)}</tbody></table>
