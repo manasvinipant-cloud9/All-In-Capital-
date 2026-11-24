@@ -35,10 +35,11 @@ test("every real Riya email in the seed export passes; the system drafts do not"
   const t = parse(readFileSync("seed/exports/loop2_first_email.csv", "utf8")), h = t[0], idx = (k: string) => h.indexOf(k);
   for (const r of t.slice(1, 59)) {
     const fin = r[idx("riya_final_email")], draft = r[idx("system_draft")];
-    if (fin !== draft) { assert.deepEqual(lint({ template: "invite", subject: "Quick call", body: fin }), [], r[0]); passed++; }
-    else draftsFail += lint({ template: "invite", subject: "Quick call", body: draft }).length > 0 ? 1 : 0;
+    // Every email Riya sent, rewritten or sent as it was, must pass: a check she fails is a wrong check.
+    assert.deepEqual(lint({ template: "invite", subject: "Quick call", body: fin }), [], r[0]); passed++;
+    if (fin !== draft) draftsFail += lint({ template: "invite", subject: "Quick call", body: draft }).length > 0 ? 1 : 0;
   }
-  assert.ok(passed > 20); assert.equal(draftsFail > 0, true);
+  assert.equal(passed, 58); assert.ok(draftsFail > 20, "rewritten system drafts should fail the checks");
   const dirty = t.slice(59, 61).map(r => lint({ template: "invite", subject: "Hi", body: r[idx("riya_final_email")] }).length);
   assert.ok(dirty.every(n => n > 0), "dirty rows must fail");
 });

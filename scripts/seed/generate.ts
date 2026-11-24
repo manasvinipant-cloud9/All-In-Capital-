@@ -41,11 +41,15 @@ const slotsTxt = ["Tuesday 2 Dec 3pm IST", "Thursday 4 Dec 4pm IST"];
 const words = (t: string) => t.trim().split(/\s+/).length;
 const loop2 = Array.from({ length: 60 }, (_, i) => {
   const n = pick(nums), fn = pick(["Asha", "Ravi", "Meera", "Kabir", "Sana", "Nikhil"]);
-  const draft = `Hi ${fn},\n\nImpressive technology! We love what you are building and were excited to see your traction of ${n} and a very large market. Would you be open to a chat sometime to tell us more about the business?\n\nBest regards,\nRiya`;
-  let final = draft;
+  const bad = `Hi ${fn},\n\nImpressive technology! We love what you are building and were excited to see your traction of ${n} and a very large market. Would you be open to a chat sometime to tell us more about the business?\n\nBest regards,\nRiya`;
+  const why = pick(["where most teams have no repeat data", "when most peers are pre-revenue", "this early in a crowded space"]);
+  const ask = pick(["How did you get there with so little spend?", "Which channel carried most of it, and what did it cost?", "What did you change in the product to get that?"]);
+  const good = `Hi ${fn},\n${n} is unusual for a pre-seed team, ${why}. ${ask}\nWould ${pick(slotsTxt)} or ${pick(["Thursday 11 Dec 2pm IST", "Tuesday 9 Dec 4pm IST"])} work for a 30-minute call? If neither suits you, reply with a time that does.\nRiya\nAll In Capital`;
+  let draft = bad, final = bad;
   if (i === 58) final = `Dear Ms ${fn}, ${"We are pleased to receive your application and would like to introduce our fund in detail. ".repeat(8)}Kind regards`;
   else if (i === 59) final = Array(136).fill("boilerplate").join(" ");
-  else if (rnd() < 0.58) final = `Hi ${fn},\n${n} is unusual for a pre-seed team in this sector. How did you get there with so little spend?\nWould ${slotsTxt[0]} or ${slotsTxt[1]} work for a 30-minute call?\nRiya\nAll In Capital`;
+  else if (rnd() < 0.58) final = good;          // Riya rewrote the system draft
+  else { draft = good; final = good; }          // the system draft already met her standard and she sent it as it was
   return { row_id: `L2-${i + 1}`, date_sent: `2026-0${1 + Math.floor(i / 12)}-${String(5 + (i % 20)).padStart(2, "0")}`, founder_name: fn, startup: `SynthCo ${i + 1}`, founder_type: pick(ftypes), sector: pick(sectors), stage: "Pre-seed", city: pick(cities),
     founder_background: "Synthetic background", traction_facts: n, system_draft: draft, riya_final_email: final, synthetic: true, riya_words: words(final) };
 });

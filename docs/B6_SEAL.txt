@@ -1,0 +1,3 @@
+Sealed test set fingerprint (SHA-256): 964eb1a89cf1a16ef608c77a629b34240f00dcf8883a525a7a9e640efb0012da
+Rows: 20; by founder type: domain-expert 10, first-time 6, repeat 4
+Sealed before any prompt, harness or training work.
