@@ -22,7 +22,7 @@ export default async function Board() {
       <p className="text-sm text-subtle"><span className="num">{waiting}</span> waiting for a reply · <span className="num">{needs}</span> need you · <a className="text-cobalt underline" href="/meetings">See all</a></p>
     </section>
     {look.length > 0 && <section aria-label="Needs a look" className="mb-4 rounded-xl bg-[var(--red-tint)] p-4 text-sm text-red"><h2 className="text-base">Needs a look</h2><ul className="mt-1 list-disc pl-5">{look.map(j => <li key={j.id}><a className="underline" href={`/apps/${j.slug}`}>{j.slug}</a>: {j.reason}</li>)}</ul></section>}
-    <Placeholder />
+    <Placeholder n={apps.filter(a => a.source === "placeholder").length} of={apps.length} />
     <BoardView cards={apps.map(a => ({ slug: a.slug, company: a.company, oneLiner: a.oneLiner, judgement: judgement(a), score: a.total, gates: a.gates.filter(g => g.tripped).map(g => g.gate), lane: a.lane, leans: a.leans }))} />
   </>);
 }

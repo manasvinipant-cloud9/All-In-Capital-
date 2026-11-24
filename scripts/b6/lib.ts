@@ -8,21 +8,8 @@ export const sha256 = (s: string) => createHash("sha256").update(s).digest("hex"
 export const writeJson = (name: string, v: unknown) => { ensure(); writeFileSync(`${DATA}/${name}`, JSON.stringify(v, null, 2)); };
 export const readJson = <T,>(name: string): T => JSON.parse(readFileSync(`${DATA}/${name}`, "utf8"));
 
-export function parseCsv(s: string): Record<string, string>[] {
-  const out: string[][] = [];
-  let row: string[] = [], cur = "", q = false;
-  for (let i = 0; i < s.length; i++) {
-    const c = s[i];
-    if (q) { if (c === '"' && s[i + 1] === '"') { cur += '"'; i++; } else if (c === '"') q = false; else cur += c; }
-    else if (c === '"') q = true;
-    else if (c === ",") { row.push(cur); cur = ""; }
-    else if (c === "\n") { row.push(cur); out.push(row); row = []; cur = ""; }
-    else cur += c;
-  }
-  if (cur || row.length) { row.push(cur); out.push(row); }
-  const [h, ...rows] = out;
-  return rows.filter(r => r.length === h.length).map(r => Object.fromEntries(h.map((k, i) => [k, r[i]])));
-}
+import { parseCsv } from "../../src/lib/csv.ts";
+export { parseCsv };
 export const words = (s: string) => s.trim().split(/\s+/).filter(Boolean).length;
 export const loop1 = () => parseCsv(readFileSync("seed/exports/loop1_screening.csv", "utf8"));
 export const loop2 = () => parseCsv(readFileSync("seed/exports/loop2_first_email.csv", "utf8"));

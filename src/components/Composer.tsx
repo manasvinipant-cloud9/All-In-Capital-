@@ -3,21 +3,31 @@ import { useEffect, useMemo, useState } from "react";
 import { lint } from "../lib/email/lint";
 import { fmtSlot } from "../lib/ist";
 
-type P = { slug: string; company: string; founderName: string; to: string; subject: string; body: string; offered: string[]; deeptech: boolean; sent: boolean };
-const CHIPS = ["Shorter", "Warmer", "More direct", "Different opening", "Sharper question"];
+type P = { slug: string; company: string; founderName: string; to: string; subject: string; body: string; offered: string[]; deeptech: boolean; sent: boolean; sector: string; modelReady: boolean };
+const CHIPS: [string, string][] = [["Shorter", "Make it shorter."], ["Warmer", "Make it warmer without any praise."], ["More direct", "Make it more direct."], ["Different opening", "Use a different opening."], ["Sharper question", "Ask a sharper question about the number."]];
 
 export default function Composer(p: P) {
   const key = `draft:${p.slug}`;
   const [subject, setSubject] = useState(p.subject), [body, setBody] = useState(p.body), [to, setTo] = useState(p.to);
+  const [offered, setOffered] = useState(p.offered), [original, setOriginal] = useState(p.body), [note, setNote] = useState(""), [redoing, setRedoing] = useState(false), [redoMsg, setRedoMsg] = useState("");
   const [saved, setSaved] = useState(""), [review, setReview] = useState(false), [msg, setMsg] = useState<string | null>(null), [busy, setBusy] = useState(false);
   useEffect(() => { try { const s = JSON.parse(localStorage.getItem(key) ?? "null"); if (s) { setSubject(s.subject); setBody(s.body); setTo(s.to); setSaved("Restored your edits"); } } catch {} }, [key]);
   useEffect(() => { const t = setTimeout(() => { try { localStorage.setItem(key, JSON.stringify({ subject, body, to })); setSaved("Saved"); } catch {} }, 600); return () => clearTimeout(t); }, [subject, body, to, key]);
   const issues = useMemo(() => lint({ template: "invite", subject, body, deeptech: p.deeptech }), [subject, body, p.deeptech]);
-  const times = p.offered.map(s => fmtSlot(new Date(s))).filter(t => body.includes(t));
+  const times = offered.map(s => fmtSlot(new Date(s))).filter(t => body.includes(t));
+  async function redo(n: string) {
+    setRedoing(true); setRedoMsg("");
+    try {
+      const r = await fetch("/api/draft", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: p.slug, note: n }) }), j = await r.json();
+      if (!r.ok) { setRedoMsg(j.message ?? "Could not redo this one."); return; }
+      setSubject(j.subject); setBody(j.body); setOffered(j.offered); setOriginal(j.body);
+      setRedoMsg(j.passed ? "Redone. All checks pass." : "Redone, but some checks still fail. Fix them by hand.");
+    } catch { setRedoMsg("Could not reach the server. Try again."); } finally { setRedoing(false); }
+  }
   async function send() {
     setBusy(true); setMsg(null);
     try {
-      const r = await fetch("/api/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: p.slug, company: p.company, founderName: p.founderName, to, confirmRecipient: to, subject, body, offered: p.offered, deeptech: p.deeptech }) });
+      const r = await fetch("/api/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: p.slug, company: p.company, founderName: p.founderName, to, confirmRecipient: to, subject, body, offered, deeptech: p.deeptech, sector: p.sector, original }) });
       const j = await r.json(); setMsg(j.message ?? (j.ok ? "Sent." : j.error ?? "Could not send."));
     } catch { setMsg("Could not reach the server. Try again."); } finally { setBusy(false); }
   }
@@ -30,8 +40,11 @@ export default function Composer(p: P) {
     <label htmlFor="body" className="text-sm text-muted">Letter</label>
     <textarea id="body" value={body} onChange={e => setBody(e.target.value)} rows={9} className="mt-1 w-full rounded-lg border border-line bg-card p-3 text-sm leading-relaxed" />
     <p className="mt-1 text-xs text-subtle" role="status">{saved}</p>
-    <div className="mt-2 flex flex-wrap gap-2" aria-label="Redo options">{CHIPS.map(c => <button key={c} disabled title="Redo needs a model key, which is not set up yet" className="btn !min-h-11 border border-line text-sm text-subtle disabled:cursor-not-allowed disabled:opacity-70">{c}</button>)}</div>
-    <p className="mt-1 text-xs text-subtle">Redo chips need a model key. Edit by hand for now.</p>
+    <div className="mt-2 flex flex-wrap gap-2" aria-label="Redo options">{CHIPS.map(([c, n]) => <button key={c} disabled={!p.modelReady || redoing} onClick={() => redo(n)} title={p.modelReady ? n : "Redo needs a model key, which is not set up yet"} className="btn !min-h-11 border border-line text-sm disabled:cursor-not-allowed disabled:opacity-70 disabled:text-subtle">{c}</button>)}</div>
+    <div className="mt-2 flex gap-2"><label htmlFor="note" className="sr-only">Redo with a note</label>
+      <input id="note" value={note} onChange={e => setNote(e.target.value)} maxLength={200} placeholder="Redo with a note" disabled={!p.modelReady || redoing} className="min-h-11 flex-1 rounded-lg border border-line bg-card px-3 text-sm disabled:opacity-70" />
+      <button disabled={!p.modelReady || redoing || !note.trim()} onClick={() => redo(note)} className="btn border border-line text-sm disabled:opacity-70">Redo</button></div>
+    <p className="mt-1 text-xs text-subtle" role="status">{redoing ? "Redoing..." : redoMsg || (p.modelReady ? "Redo uses your real past emails as examples." : "Redo needs a model key. Edit by hand for now.")}</p>
     <section aria-label="Live checks" className="mt-3 rounded-lg bg-bg p-3 text-sm">
       <h3 className="text-sm">Live checks</h3>
       {issues.length === 0 ? <p className="mt-1 text-green">All checks pass.</p> : <ul className="mt-1 list-disc space-y-1 pl-5 text-red">{issues.map((i, k) => <li key={k}>{i.msg}</li>)}</ul>}

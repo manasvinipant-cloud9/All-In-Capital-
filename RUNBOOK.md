@@ -51,7 +51,9 @@ Fill this in before go-live: _name and number of the person who deploys_, and _t
 
 ## Known gaps (as of this version)
 
-- The AI scoring, research and drafting are waiting for model keys. Ratings on screen are placeholders.
+- Reading, scoring and drafting are connected but have only been tried with a pretend model. They wait for model keys. Until an application has been scored, its rating on screen is a labelled placeholder.
+- The research step (looking up founders on the web) is not built yet.
+- Follow-ups are prepared after 3 working days of silence and appear on the Meetings page under "Follow-ups ready". They are never sent until you click.
 - Gmail and Calendar are written but have not been tried against real accounts.
 - There is no pause-sending switch.
 - The database is not connected yet: decisions and settings are saved on the machine running the app.

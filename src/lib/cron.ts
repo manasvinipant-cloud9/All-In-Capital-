@@ -3,10 +3,13 @@ import { autoSchedule, type Action, type CalendarPort, type MailPort } from "./s
 import type { Store } from "./schedule/store.ts";
 import { processNext, type Handler, type Job } from "./queue.ts";
 import { isPaused } from "./spend.ts";
+import { prepareFollowups } from "./followups.ts";
 
 export async function runCron(d: { now: Date; store: Store; mail?: MailPort; cal?: CalendarPort; handler: Handler; paused?: boolean; aditya?: string }) {
-  const out: { scheduler: Action[] | "skipped: Gmail and Calendar are not connected"; queue: Job | null | "paused: daily spend cap reached" } = { scheduler: "skipped: Gmail and Calendar are not connected", queue: null };
+  const out: { scheduler: Action[] | "skipped: Gmail and Calendar are not connected"; queue: Job | null | "paused: daily spend cap reached"; followupsPrepared: number } = { scheduler: "skipped: Gmail and Calendar are not connected", queue: null, followupsPrepared: 0 };
   if (d.mail && d.cal) out.scheduler = await autoSchedule({ store: d.store, mail: d.mail, cal: d.cal, now: d.now, aditya: d.aditya });
+  const busy = d.cal ? await d.cal.freeBusy(d.now, new Date(d.now.getTime() + 60 * 86400000)) : [];
+  out.followupsPrepared = prepareFollowups({ store: d.store, now: d.now, busy }).length;
   const paused = d.paused ?? isPaused(d.now);
   out.queue = paused ? "paused: daily spend cap reached" : await processNext(d.handler, d.now);
   return out;

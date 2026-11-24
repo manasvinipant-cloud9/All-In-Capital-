@@ -1,6 +1,6 @@
 // Every claim cites its source. Uncited output is rejected and retried once with the reason.
 import type { Page } from "./ingest.ts";
-export type Claim = { metric: string; value: string | number; unit?: string; period?: string; quote: string; page: number };
+export type Claim = { id?: string; metric: string; value: string | number; unit?: string; period?: string; quote: string; page: number };
 const norm = (s: string) => s.replace(/\s+/g, " ").trim().toLowerCase();
 
 export function validateClaim(c: Claim, pages: Page[]): string | null {

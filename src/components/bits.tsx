@@ -9,6 +9,7 @@ export function Rating({ score }: { score: number }) {
 export function GateChip({ code }: { code: string }) {
   return <span className="inline-flex items-center rounded-full bg-[var(--red-tint)] px-2.5 py-1 text-xs font-semibold text-red">{GATE_NAME[code]}</span>;
 }
-export function Placeholder() {
-  return <p className="mb-4 rounded-lg border border-line bg-[var(--amber-tint)] px-3 py-2 text-sm text-amber">Ratings on these screens are placeholders. No model has scored these applications yet. Gates and number checks are real.</p>;
+export function Placeholder({ n = 1, of }: { n?: number; of?: number }) {
+  if (n === 0) return null;
+  return <p className="mb-4 rounded-lg border border-line bg-[var(--amber-tint)] px-3 py-2 text-sm text-amber">{of && of > 1 ? `${n} of ${of} applications have placeholder ratings: no model has scored them yet.` : "This rating is a placeholder: no model has scored this application yet."} Gates and number checks are real.</p>;
 }
