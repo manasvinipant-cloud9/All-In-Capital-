@@ -1,6 +1,8 @@
+import { requirePartner } from "../../../lib/auth";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 const FILE = ".local/portfolio-edits.json";
 export async function POST(req: Request) {
+  const no = await requirePartner(); if (no) return no;
   const b = await req.json();
   if (typeof b.name !== "string" || typeof b.one_liner !== "string" || b.one_liner.length > 300) return Response.json({ error: "bad_request" }, { status: 400 });
   const known = (JSON.parse(readFileSync("seed/portfolio.json", "utf8")) as { name: string }[]).some(p => p.name === b.name);

@@ -6,6 +6,7 @@ const TABS = [["Board", "/"], ["Meetings", "/meetings"], ["Calibration", "/calib
 const on = (p: string, h: string) => (h === "/" ? p === "/" || p.startsWith("/apps") : p.startsWith(h));
 export default function TopBar() {
   const p = usePathname();
+  if (p === "/login") return null;
   return (<>
     <header className="hidden md:block border-b border-line bg-card">
       <nav aria-label="Main" className="mx-auto flex h-14 max-w-[1280px] items-center gap-6 px-6">
