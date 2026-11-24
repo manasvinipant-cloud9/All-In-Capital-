@@ -1,17 +1,18 @@
 "use client";
 import { useState } from "react";
 
-export function DecisionPanel({ company, hasGate }: { company: string; hasGate: boolean }) {
-  const [d, setD] = useState<"yes" | "no" | null>(null), [why, setWhy] = useState("");
+export function DecisionPanel({ slug, company, rec, hasGate }: { slug: string; company: string; rec: string; hasGate: boolean }) {
+  const [d, setD] = useState<"yes" | "no" | null>(null), [why, setWhy] = useState(""), [msg, setMsg] = useState("");
+  async function save(v: "yes" | "no") { setD(v); setMsg("Saving"); try { const r = await fetch("/api/decision", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, company, rec, decision: v, note: why }) }); const j = await r.json(); setMsg(j.ok ? (j.against ? "Saved. This went against the recommendation, so it will appear under Corrections." : "Saved.") : "Could not save. Try again."); } catch { setMsg("Could not save. Try again."); } }
   return (<section aria-label="Your decision" className="rounded-xl bg-[var(--dark-panel)] p-4 text-[var(--on-dark)]">
     <h2 className="text-base">Your decision</h2>
     <p className="mt-1 text-sm opacity-80">{hasGate ? "A check tripped. You still decide." : "Nothing is sent or rejected until you click."}</p>
     <label htmlFor="why" className="mt-3 block text-sm">Why? (optional)</label>
     <textarea id="why" value={why} onChange={e => setWhy(e.target.value)} rows={2} className="mt-1 w-full rounded-lg border border-white/20 bg-transparent p-2 text-sm" />
     <div className="mt-3 grid grid-cols-2 gap-2">
-      <button className="btn bg-[var(--cobalt)] text-[var(--on-cobalt)] hover:bg-[var(--cobalt-hover)]" aria-pressed={d === "yes"} onClick={() => setD("yes")}>Yes, give it time</button>
-      <button className="btn border border-white/30" aria-pressed={d === "no"} onClick={() => setD("no")}>No</button></div>
-    {d && <p role="status" className="mt-3 text-sm">Recorded on screen only for {company}: {d === "yes" ? "Yes" : "No"}. Saving to the database arrives in a later phase.</p>}
+      <button className="btn bg-[var(--cobalt)] text-[var(--on-cobalt)] hover:bg-[var(--cobalt-hover)]" aria-pressed={d === "yes"} onClick={() => save("yes")}>Yes, give it time</button>
+      <button className="btn border border-white/30" aria-pressed={d === "no"} onClick={() => save("no")}>No</button></div>
+    {d && <p role="status" className="mt-3 text-sm">{msg}</p>}
   </section>);
 }
 

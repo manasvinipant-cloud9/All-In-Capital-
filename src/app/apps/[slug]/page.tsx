@@ -57,7 +57,7 @@ export default async function App({ params }: { params: Promise<{ slug: string }
       <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">
         <div className="card p-4"><div className="flex items-center justify-between"><Rating score={a.total} /><span className="rounded-full bg-bg px-2 py-0.5 text-xs font-semibold">{a.lane === "your_call" ? "Your call" : a.lane === "yes" ? "Yes" : "No"}</span></div>
           <p className="mt-2 text-sm text-muted">{tripped.length ? `${tripped.length} check${tripped.length > 1 ? "s" : ""} tripped.` : "No checks tripped."} Word: {ratingWord(a.total)}.</p>
-          <div className="mt-3"><ThesisToggle revealed="How we invest: founder owns the hardest risk, groundwork before product, evidence over pedigree." written="What we say: fintech, deeptech, consumer tech and consumer brands, pre-seed and seed in India." /></div></div>
-        <DecisionPanel company={a.company} hasGate={tripped.length > 0} />
+          <div className="mt-3"><ThesisToggle revealed={`How we invest: ${ratingWord(a.total)}. Founder owns the hardest risk, groundwork before product, evidence over pedigree.`} written={`What we say: ${ratingWord(a.totalWritten)}. Fintech, deeptech, consumer tech and consumer brands, pre-seed and seed in India.`} /></div></div>
+        <DecisionPanel slug={a.slug} company={a.company} rec={a.rec} hasGate={tripped.length > 0} />
       </aside></div></>);
 }

@@ -6,14 +6,14 @@ export type Gate = { gate: "G1" | "G2" | "G3" | "G4"; tripped: boolean; reason: 
 export type PortfolioRow = { name: string; one_liner: string };
 
 /** G1: pre-seed or seed, raise <= Rs 10 Cr, post-money <= Rs 40 Cr. Unreadable amounts are flagged with the text. Deterministic. */
-export function g1(form: Record<string, string>): Gate {
+export function g1(form: Record<string, string>, lim = { raiseMaxCr: 10, postMaxCr: 40 }): Gate {
   const stage = (form["Stage"] ?? "").toLowerCase();
   const round = form["Round size"] ?? "", post = form["Valuation (post-money)"] ?? "";
   const r = parseInr(round), p = parseInr(post);
   const why: string[] = [];
   if (!/pre-?seed|^seed$/.test(stage)) why.push(`stage is "${form["Stage"]}"`);
-  if (r == null) why.push(`could not read round size: "${round}"`); else if (toCr(r) > 10) why.push(`raise Rs ${toCr(r)} Cr is above Rs 10 Cr`);
-  if (p == null) why.push(`could not read valuation: "${post}"`); else if (toCr(p) > 40) why.push(`post-money Rs ${toCr(p)} Cr is above Rs 40 Cr`);
+  if (r == null) why.push(`could not read round size: "${round}"`); else if (toCr(r) > lim.raiseMaxCr) why.push(`raise Rs ${toCr(r)} Cr is above Rs ${lim.raiseMaxCr} Cr`);
+  if (p == null) why.push(`could not read valuation: "${post}"`); else if (toCr(p) > lim.postMaxCr) why.push(`post-money Rs ${toCr(p)} Cr is above Rs ${lim.postMaxCr} Cr`);
   return { gate: "G1", tripped: why.length > 0, reason: why.join("; ") || "Pre-seed or seed, within the cheque.", cite: [{ field: "Stage / Round size / Valuation" }] };
 }
 
