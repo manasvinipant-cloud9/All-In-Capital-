@@ -1,5 +1,6 @@
 // Follow-ups are PREPARED, never sent. After 3 working days of silence a draft with two fresh free times waits for Riya's click.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { getMeta, pathsFor } from "./apps.ts";
 import { parseForm } from "./pipeline/ingest.ts";
 import { followupDue } from "./schedule/auto.ts";
 import type { Store } from "./schedule/store.ts";
@@ -22,7 +23,8 @@ export function prepareFollowups(d: { store: Store; now: Date; busy?: Busy[] }):
     if (!followupDue(new Date(t.sentAt), d.now, false)) continue;
     const slots = candidateSlots({ now: d.now, busy: d.busy });
     if (slots.length < 2) continue;
-    const form = parseForm(readFileSync(`seed/forms/${t.slug}.json`, "utf8"));
+    const meta = getMeta(t.slug); if (!meta) continue;
+    const form = parseForm(readFileSync(pathsFor(meta).form, "utf8"));
     made.push({ id: `fu-${t.id}`, threadId: t.id, slug: t.slug, company: t.company, to: t.founderEmail, subject: "Following up on your application",
       body: fillSlots(followupText(firstName(t.founderName), pickFact(form).fact), slots), offered: slots.map(s => s.toISOString()), createdAt: d.now.toISOString(), status: "ready" });
   }

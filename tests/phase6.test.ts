@@ -19,7 +19,10 @@ const log = (o: Partial<CallLog>): CallLog => ({ at: fromIST(2026, 10, 24, 12).t
 test("sessions: sign, verify, tamper, expiry, short secret", async () => {
   const exp = Date.now() + 60000, tok = await signSession({ email: "a@x.test", role: "partner", exp }, SECRET);
   assert.equal((await verifySession(tok, SECRET))?.email, "a@x.test");
-  assert.equal(await verifySession(tok.replace(/.$/, c => (c === "A" ? "B" : "A")), SECRET), null);
+  // Change a character in the middle of the signature. (The last base64 character partly holds padding bits, so changing only it can leave the signature bytes identical.)
+  const [body, sig] = tok.split("."), mid = 10, flipped = sig.slice(0, mid) + (sig[mid] === "A" ? "B" : "A") + sig.slice(mid + 1);
+  assert.equal(await verifySession(`${body}.${flipped}`, SECRET), null);
+  assert.equal(await verifySession(`${body.slice(0, 5)}${body[5] === "A" ? "B" : "A"}${body.slice(6)}.${sig}`, SECRET), null, "a changed body fails too");
   assert.equal(await verifySession(tok, "another-secret-0123456789"), null);
   assert.equal(await verifySession(tok, SECRET, exp + 1), null);
   assert.equal(await verifySession(tok, "short"), null);

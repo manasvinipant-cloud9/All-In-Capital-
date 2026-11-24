@@ -1,11 +1,10 @@
 import { readFileSync } from "node:fs";
-import { pdfPages, parseForm } from "./pipeline/ingest.ts";
 import { reconcile } from "./pipeline/reconcile.ts";
 import { g1, g2Offline, g3, g4 } from "./pipeline/gates.ts";
 import { scoreApplication } from "./pipeline/score.ts";
 import { realTransport, modelNames } from "./gateway/transport.ts";
 import { loadConfig } from "./config.ts";
-import { APPS } from "../../scripts/seed/apps.ts";
+import { loadFiles, validSlug } from "./apps.ts";
 import type { Transport } from "./gateway/index.ts";
 import type { Handler } from "./queue.ts";
 
@@ -17,9 +16,8 @@ export type Deps = { transport?: Transport | null; names?: { primary: string; fa
  */
 export function makeProcessor(deps: Deps = {}): Handler {
   return async slug => {
-    if (!/^[a-z0-9-]+$/.test(slug)) throw new Error("bad application id");
-    const meta = APPS.find(a => a.slug === slug); if (!meta) throw new Error("unknown application");
-    const deck = await pdfPages(`seed/decks/${slug}.pdf`), form = parseForm(readFileSync(`seed/forms/${slug}.json`, "utf8"));
+    if (!validSlug(slug)) throw new Error("bad application id");
+    const { meta, deck, form } = await loadFiles(slug);
     const checks = reconcile(form, deck), portfolio = JSON.parse(readFileSync("seed/portfolio.json", "utf8"));
     const gates = [g1(form, loadConfig().fund), g2Offline(deck), g3(deck[0].text, portfolio), g4(checks)];
     const steps: Record<string, string> = { ingest: "done", reconcile: `done (${checks.length} checks)`, gates: `done (${gates.filter(g => g.tripped).length} tripped)`, rank: "done" };

@@ -8,6 +8,15 @@ For Riya and the analyst. No engineering needed for the day-to-day items below. 
 - Booking never sends a first letter. You always click send on the first letter.
 - Nothing is ever rejected or advanced automatically.
 
+## Adding an application
+
+1. On the Board, click **Add application**.
+2. Upload the pitch deck (PDF, up to 16 MB) and the founder form (PDF, text or JSON).
+3. If the form is missing something (for example the company name), type it in the second box. What you type replaces what was read.
+4. It joins the queue and is read within 5 minutes. It shows under **Waiting to be scored** with the real checks (numbers, stage, portfolio overlap) but no rating until a model scores it.
+
+Good to know: the form is read by its labels, not their position, so differently laid-out forms read the same. A form where labels and values sit in separate table cells (with no colon) may not read; type the details in the second box. The same deck added twice is recognised and not duplicated. You can add up to 10 a hour.
+
 ## You see / it means / do this
 
 | You see | It means | Do this |

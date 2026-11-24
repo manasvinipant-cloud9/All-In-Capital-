@@ -19,7 +19,8 @@ export default async function App({ params }: { params: Promise<{ slug: string }
   const a = (await allApps()).find(x => x.slug === slug);
   if (!a) notFound();
   const tripped = a.gates.filter(g => g.tripped);
-  const band = a.lane === "yes" ? ["Yes: give it 30 minutes.", "bg-[var(--green-tint)] text-green"] : a.lane === "no" ? ["No: don't spend time on it.", "bg-bg text-muted border border-line"] : ["Your call.", "bg-[var(--amber-tint)] text-amber"];
+  const unscored = a.source === "unscored";
+  const band = unscored ? ["Waiting for a score.", "bg-bg text-muted border border-line"] : a.lane === "yes" ? ["Yes: give it 30 minutes.", "bg-[var(--green-tint)] text-green"] : a.lane === "no" ? ["No: don't spend time on it.", "bg-bg text-muted border border-line"] : ["Your call.", "bg-[var(--amber-tint)] text-amber"];
   const th = threadFor(a.slug), st = statusOf(th);
   const offered = candidateSlots({ now: new Date() });
   const inv = offlineInvite(a.form, a.stage, a.sector, isDeeptech(a.sector));
@@ -28,8 +29,8 @@ export default async function App({ params }: { params: Promise<{ slug: string }
   return (<>
     <Link href="/" className="inline-flex min-h-11 items-center text-sm text-cobalt">Back to board</Link>
     <h1 className="mt-1 text-2xl md:text-3xl">{a.company}</h1>
-    <p className="text-sm text-muted">{a.sector} · {a.stage} · {a.city} · {a.form["Round size"]}</p>
-    <div className="mt-4">{a.source === "placeholder" ? <Placeholder /> : <p className="mb-4 text-sm text-muted">Scored by the model on {new Date(a.scoredAt!).toLocaleDateString("en-IN")}. Gaps are named under More detail.</p>}</div>
+    <p className="text-sm text-muted">{[a.sector, a.stage, a.city, a.form["Round size"]].filter(Boolean).join(" · ")}</p>
+    <div className="mt-4">{unscored ? <p className="mb-4 rounded-lg border border-line bg-card px-3 py-2 text-sm text-muted">{a.waiting} The checks below are real. No rating yet.</p> : a.source === "placeholder" ? <Placeholder /> : <p className="mb-4 text-sm text-muted">Scored by the model on {new Date(a.scoredAt!).toLocaleDateString("en-IN")}. Gaps are named under More detail.</p>}</div>
     <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
       <div className="space-y-5">
         <section className={`rounded-xl p-5 ${band[1]}`}><p className="text-sm font-semibold uppercase tracking-wide">Give it time?</p><p className="font-[family-name:var(--font-head)] text-2xl font-semibold">{band[0]}</p>
@@ -37,8 +38,8 @@ export default async function App({ params }: { params: Promise<{ slug: string }
           {a.lane === "your_call" && <ul className="mt-3 space-y-1 text-sm"><li><b>The AI leans {a.leans}:</b> {a.leans === "yes" ? "evidence is close to the line." : "too many gaps for the stage."}</li>
             <li><b>It&apos;s a yes if</b> the {low.join(" and ")} questions below get clear numbers.</li><li><b>It&apos;s a no if</b> {reds.length ? "the flagged numbers cannot be explained." : "the answers stay vague."}</li></ul>}</section>
         <section className="grid gap-3 md:grid-cols-3">
-          <div className="card p-4"><h2 className="text-base">For it</h2><p className="mt-1 text-sm">Scores best on {CRITERIA[a.best]}.</p></div>
-          <div className="card p-4"><h2 className="text-base">Against it</h2><p className="mt-1 text-sm">{reds.length ? `${reds[0].name}: ${reds[0].formula}` : `Weakest on ${CRITERIA[a.worst]}.`}</p></div>
+          <div className="card p-4"><h2 className="text-base">For it</h2><p className="mt-1 text-sm">{unscored ? "No rating yet." : `Scores best on ${CRITERIA[a.best]}.`}</p></div>
+          <div className="card p-4"><h2 className="text-base">Against it</h2><p className="mt-1 text-sm">{reds.length ? `${reds[0].name}: ${reds[0].formula}` : unscored ? "No number problems found in the checks." : `Weakest on ${CRITERIA[a.worst]}.`}</p></div>
           <div className="card p-4"><h2 className="text-base">Reminds us of</h2><p className="mt-1 text-sm">{a.reminds ? `${a.reminds.company} (${a.reminds.outcome}). ${a.reminds.why}` : "No close precedent."}</p></div></section>
         {tripped.length > 0 && <section className="card p-4"><h2 className="text-base">Checks</h2><ul className="mt-2 space-y-2 text-sm">{tripped.map(g => <li key={g.gate} className="flex flex-wrap items-center gap-2"><GateChip code={g.gate} /><span>{g.reason}</span>
           {g.cite?.[0]?.page && <Source page={g.cite[0].page} quote={g.cite[0].quote} text={a.deck[g.cite[0].page - 1].text} />}</li>)}</ul></section>}
@@ -50,15 +51,15 @@ export default async function App({ params }: { params: Promise<{ slug: string }
           </section>
         <details className="card p-4"><summary className="cursor-pointer text-base font-semibold">More detail</summary>
           <table className="mt-3 w-full text-left text-sm"><caption className="sr-only">Areas</caption><thead><tr className="text-subtle"><th scope="col" className="py-1">Area</th><th scope="col">Rating</th><th scope="col" className="hidden md:table-cell">Why</th><th scope="col">Ask</th></tr></thead>
-            <tbody>{Object.entries(CRITERIA).map(([k, n]) => <tr key={k} className="border-t border-line align-top"><th scope="row" className="py-2 pr-2 font-medium capitalize">{n}</th><td className="pr-2"><Rating score={a.scores[k]} /></td><td className="hidden pr-2 text-muted md:table-cell">{a.rationale[k] ?? SENT[k]}{a.gaps[k] ? <span className="block text-amber">Gap: {a.gaps[k]}</span> : null}</td><td className="text-muted">{ASK[k]}</td></tr>)}</tbody></table>
+            <tbody>{Object.entries(CRITERIA).map(([k, n]) => <tr key={k} className="border-t border-line align-top"><th scope="row" className="py-2 pr-2 font-medium capitalize">{n}</th><td className="pr-2">{unscored ? <span className="text-sm text-subtle">Not scored</span> : <Rating score={a.scores[k]} />}</td><td className="hidden pr-2 text-muted md:table-cell">{a.rationale[k] ?? SENT[k]}{a.gaps[k] ? <span className="block text-amber">Gap: {a.gaps[k]}</span> : null}</td><td className="text-muted">{ASK[k]}</td></tr>)}</tbody></table>
           <h3 className="mt-4 text-base">Numbers that don&apos;t add up</h3>
           {a.checks.length === 0 ? <p className="text-sm text-muted">Nothing found.</p> : <ul className="mt-1 space-y-1 text-sm">{a.checks.map((c, i) => <li key={i}><b>{c.name}.</b> <span className="num text-muted">{c.formula}</span> {c.page && <Source page={c.page} quote={c.quote} text={a.deck[c.page - 1].text} />}</li>)}</ul>}
         </details>
       </div>
       <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">
-        <div className="card p-4"><div className="flex items-center justify-between"><Rating score={a.total} /><span className="rounded-full bg-bg px-2 py-0.5 text-xs font-semibold">{a.lane === "your_call" ? "Your call" : a.lane === "yes" ? "Yes" : "No"}</span></div>
-          <p className="mt-2 text-sm text-muted">{tripped.length ? `${tripped.length} check${tripped.length > 1 ? "s" : ""} tripped.` : "No checks tripped."} Word: {ratingWord(a.total)}.</p>
-          <div className="mt-3"><ThesisToggle revealed={`How we invest: ${ratingWord(a.total)}. Founder owns the hardest risk, groundwork before product, evidence over pedigree.`} written={`What we say: ${ratingWord(a.totalWritten)}. Fintech, deeptech, consumer tech and consumer brands, pre-seed and seed in India.`} /></div></div>
-        <DecisionPanel slug={a.slug} company={a.company} rec={a.rec} hasGate={tripped.length > 0} />
+        <div className="card p-4"><div className="flex items-center justify-between">{unscored ? <span className="text-sm font-semibold">Not scored yet</span> : <Rating score={a.total} />}<span className="rounded-full bg-bg px-2 py-0.5 text-xs font-semibold">{a.lane === "your_call" ? "Your call" : a.lane === "yes" ? "Yes" : a.lane === "no" ? "No" : "Waiting"}</span></div>
+          <p className="mt-2 text-sm text-muted">{tripped.length ? `${tripped.length} check${tripped.length > 1 ? "s" : ""} tripped.` : "No checks tripped."}{unscored ? "" : ` Word: ${ratingWord(a.total)}.`}</p>
+          <div className="mt-3"><ThesisToggle revealed={`How we invest: ${unscored ? "not scored yet" : ratingWord(a.total)}. Founder owns the hardest risk, groundwork before product, evidence over pedigree.`} written={`What we say: ${unscored ? "not scored yet" : ratingWord(a.totalWritten)}. Fintech, deeptech, consumer tech and consumer brands, pre-seed and seed in India.`} /></div></div>
+        <DecisionPanel slug={a.slug} company={a.company} rec={unscored ? "Not scored" : a.rec} hasGate={tripped.length > 0} />
       </aside></div></>);
 }
