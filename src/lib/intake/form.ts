@@ -105,7 +105,7 @@ export function parseFormTable(text: string): Record<string, string> {
   for (const line of norm.split("\n").map(l => l.trim()).filter(Boolean)) {
     if (SECTIONS.has(line)) { started = true; continue; }
     if (!started) continue;
-    const label = TABLE_LABELS.find(l => new RegExp(`^${esc(l)}(\\s|$)`, "i").test(line));
+    const label = TABLE_LABELS.find(l => new RegExp(`^${esc(l)}(\\s|$)`).test(line));   // case-sensitive: a wrapped line like "revenue retention 112%" is not the Revenue label
     if (label) raw.push([label, line.slice(label.length).trim()]);
     else if (raw.length) raw[raw.length - 1][1] += ` ${line}`;
   }

@@ -188,3 +188,11 @@ test("cron: every application without a job or a score joins the queue exactly o
   const a = await runCron({ now: new Date(), store: new Store(false), handler, paused: true }); assert.equal(a.queued, 9);
   const b = await runCron({ now: new Date(), store: new Store(false), handler, paused: true }); assert.equal(b.queued, 0);
 }));
+
+test("the session scores in seed/scores pass the app's own rules, cover all 10 applications, and are honestly labelled", () => {
+  const f = JSON.parse(readFileSync("seed/scores/claude-session.json", "utf8")) as { scoredBy: string; note: string; apps: Record<string, { scores: Record<string, { score: number; confidence: string; cite?: string[]; gap?: string }> }> };
+  assert.equal(Object.keys(f.apps).length, 10); assert.match(f.scoredBy, /Claude in a build session/); assert.match(f.note, /not by the app's model route/); assert.match(f.note, /no confidence is 'high'/);
+  for (const [slug, e] of Object.entries(f.apps)) for (const [k, s] of Object.entries(e.scores)) {
+    assert.notEqual(s.confidence, "high", `${slug} ${k}`); assert.ok(s.score <= 2 || (s.cite ?? []).length > 0, `${slug} ${k} needs a cited quote`);
+  }
+});

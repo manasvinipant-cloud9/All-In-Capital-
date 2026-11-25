@@ -10,9 +10,13 @@ This is a working prototype. Everything below was built and tested **with preten
 |---|---|---|
 | Intake (upload deck and form), form reading, number checks, hard-rule gates, ranking | Model scoring, claim extraction, drafting, research (needs model and search keys) | Production queue on Supabase (pgmq), writing the call ledger to the database |
 | Email checker, slot logic, reply parser, auto-scheduler (with fixtures) | Gmail send and read, Calendar booking, Google sign-in | Vector search for portfolio overlap and memos (word matching is used instead) |
-| Sign-in gate, spend cap, queue, follow-up drafts | The 5-minute database trigger (`pg_cron`), Langfuse tracing | Dig and pass letters, a pause-sending switch |
+| Sign-in gate, spend cap, queue, follow-up drafts; the 10 applications scored by Claude in a build session (labelled, not by the app's own model route) | The 5-minute database trigger (`pg_cron`), Langfuse tracing | Dig and pass letters, a pause-sending switch |
 
 No application has a rating yet: the Board shows all 10 as **"Waiting to be scored"** until a model scores them. The gates and number checks are real and already run on all 10.
+
+## CI and the backup trigger
+
+The two GitHub Actions files (`ci.yml` runs typecheck, tests and the build; `cron-backup.yml` is the backup 5-minute trigger) are saved in `docs/github-workflows/`. GitHub refused to accept them in a push with the credential used to build this, so they are not under `.github/workflows/`. To switch them on, create those two files in the GitHub web editor under `.github/workflows/` (paste the contents), or push them with a credential that has the `workflow` permission.
 
 ## Data
 

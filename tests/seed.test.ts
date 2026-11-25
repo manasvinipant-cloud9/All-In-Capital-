@@ -51,3 +51,10 @@ test("memos: parsed whole, and a blind copy has no company, founder name or outc
   }
   assert.equal(getMemos().find(m => m.company === "Prepnest")!.outcome, "passed"); assert.equal(getMemos().find(m => m.company === "Jai Kisan")!.outcome, "invested");
 });
+
+test("form reader: a wrapped line that starts with a label word is a continuation, not a new field (Settlr's 'net revenue retention')", async () => {
+  const f = parseFormTable(await formText("settlr"));
+  assert.equal(f["Unit economics"], "CAC INR 14,500 per SME, payback 7 months, gross margin 58%, net revenue retention 112%.");
+  assert.equal("Revenue" in f, false, "Settlr's form has no Revenue field");
+  assert.equal(parseFormTable(await formText("talkbook")).Revenue, "MRR INR 1.9 L (INR 500 per seat per month).");
+});

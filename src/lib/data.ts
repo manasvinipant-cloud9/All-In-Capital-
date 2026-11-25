@@ -20,7 +20,7 @@ export type AppView = {
   slug: string; company: string; sector: string; stage: string; city: string; oneLiner: string; form: Record<string, string>; deck: Page[];
   scores: Record<string, number>; total: number; totalWritten: number; rec: Rec; lane: "yes" | "your_call" | "no" | "unscored"; leans?: "yes" | "no";
   gates: Gate[]; checks: Check[]; best: string; worst: string; reminds?: { company: string; outcome: string; why: string }; createdAt: string;
-  source: "model" | "unscored"; waiting?: string; research: Research | null; uploaded: boolean; rationale: Record<string, string>; gaps: Record<string, string>; scoredAt?: string;
+  source: "model" | "unscored"; waiting?: string; research: Research | null; uploaded: boolean; rationale: Record<string, string>; gaps: Record<string, string>; scoredAt?: string; scoredBy?: string;
 };
 export { ratingWord } from "./rating.ts";
 /** First real sentence of the deck: skips the page header and a sentence that is only the company name. */
@@ -80,7 +80,7 @@ export async function allApps(): Promise<AppView[]> {
     out.push({ slug: a.slug, company: a.company, sector: a.sector, stage: a.stage, city: a.city, oneLiner: form["One-line description"] ?? oneLiner(deck[0]?.text ?? "", a.company), form, deck,
       scores: sc, total: t, totalWritten: tw, rec, lane: l.lane, leans: l.leans, gates, checks, best: ent[0][0], worst: ent[ent.length - 1][0],
       reminds: memo && memo.o > 0 ? { company: memo.m.company, outcome: memo.m.outcome, why: memo.m.why } : undefined, createdAt: a.addedAt ?? `2026-11-${String(10 + i).padStart(2, "0")}`,
-      source: "model", uploaded: a.source === "uploaded", rationale: saved.rationale, gaps: saved.gaps, scoredAt: saved.scoredAt, research: loadResearch(a.slug) });
+      source: "model", uploaded: a.source === "uploaded", rationale: saved.rationale, gaps: saved.gaps, scoredAt: saved.scoredAt, scoredBy: saved.model, research: loadResearch(a.slug) });
   }
   const order = rank(out.filter(o => o.source !== "unscored").map(o => ({ id: o.slug, score: o.total, bucket: bucketOf(o.gates[0].tripped, o.gates.some(g => g.tripped)), coverage: 1, createdAt: o.createdAt })));
   return [...order.map(r => out.find(o => o.slug === r.id)!), ...out.filter(o => o.source === "unscored")];

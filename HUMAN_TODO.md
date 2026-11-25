@@ -18,6 +18,8 @@
 11. A real model run on the 10 applications, then a look at the scores and a first real research run.
 12. An accessibility scan (axe) and a 320 px reflow check.
 13. Fill in "who to call if the deploy fails" in `RUNBOOK.md`.
+14. Add the two GitHub Actions files from `docs/github-workflows/` to `.github/workflows/` (via the web editor or a credential with the `workflow` permission).
+15. Review the 10 scores in `seed/scores/claude-session.json`. They were written by Claude in a build session from the application text only, with no web research. Replace them by running a proper model pass once a model key exists.
 
 ## Decisions for you
 - The repository is public and now contains the fund's seed files. That was your call; revisit it if the course owner objects.
